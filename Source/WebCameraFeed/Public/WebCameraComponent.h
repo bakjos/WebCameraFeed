@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/SceneComponent.h"
 #include "WebCameraDevice.h"
+#include <Engine/Texture2D.h>
+#include "VideoGrabber.h"
 #include "WebCameraComponent.generated.h"
 
 
@@ -26,15 +28,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = WebCamera)
 	int requestedHeight;
 
+	
+	UFUNCTION(Category = WebCamera, BlueprintCallable)
+	UTexture2D* GetTexture();
+	
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
+private:
+	TSharedPtr<VideoGrabber> currentVideoGrabber;
 	
 };

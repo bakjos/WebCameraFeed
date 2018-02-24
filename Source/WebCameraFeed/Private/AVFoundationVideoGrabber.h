@@ -15,5 +15,17 @@ public:
 	virtual ~AVFoundationVideoGrabber();
 
 	TArray<FVideoDevice>	listDevices() const override;
+
+	bool isFrameNew() const override;
+
+	void close() override;
+
+	void update() override;
+
+	bool setup(int w, int h) override;
+
+	int getHeight() const override;
+
+	int getWidth() const override;
 };
 #endif

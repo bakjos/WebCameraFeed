@@ -17,11 +17,29 @@ public:
 	DirectShowVideoGrabber();
 	virtual ~DirectShowVideoGrabber();
 
+	void setDeviceID(int deviceID);
+
 	TArray<FVideoDevice>	listDevices() const override;
+
+	bool isFrameNew() const override;
+
+	void close() override;
+
+	void update() override;
+
+	bool setup(int w, int h) override;
+
+	int getHeight() const override;
+
+	int getWidth() const override;
 
 protected:
 	int width;
 	int height;
+	bool bChooseDevice;
+	bool bGrabberInited;
+	bool bDoWeNeedToResize;
+	bool bIsFrameNew;
 	int 					device;
 	videoInput 				VI;
 };

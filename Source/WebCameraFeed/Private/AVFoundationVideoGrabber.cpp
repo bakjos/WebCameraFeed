@@ -17,4 +17,29 @@ TArray<FVideoDevice> AVFoundationVideoGrabber::listDevices() const {
 	return devices;
 	
 }
+
+bool AVFoundationVideoGrabber::isFrameNew() const {
+	
+}
+
+void AVFoundationVideoGrabber::close() {
+	
+}
+
+void AVFoundationVideoGrabber::update() {
+	
+}
+
+bool AVFoundationVideoGrabber::setup(int w, int h) {
+	
+}
+
+int AVFoundationVideoGrabber::getHeight() const {
+	
+}
+
+int AVFoundationVideoGrabber::getWidth() const {
+	
+}
+
 #endif

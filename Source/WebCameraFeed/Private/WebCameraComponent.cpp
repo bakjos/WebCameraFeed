@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "WebCameraComponent.h"
+#include "VideoGrabberPool.h"
 
 
 // Sets default values for this component's properties
@@ -20,9 +21,15 @@ UWebCameraComponent::UWebCameraComponent()
 void UWebCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
+	currentVideoGrabber = VideoGrabberPool::GetVideoGrabber(DeviceId.selectedDevice, requestedWidth, requestedHeight);
 	
+}
+
+void UWebCameraComponent::EndPlay(const EEndPlayReason::Type EndPlayReason) {
+	Super::EndPlay(EndPlayReason);
+	if (currentVideoGrabber.IsValid()) {
+		VideoGrabberPool::ReleaseVideoGrabber(currentVideoGrabber);
+	}
 }
 
 
@@ -32,5 +39,12 @@ void UWebCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	// ...
+}
+
+UTexture2D* UWebCameraComponent::GetTexture() {
+	if ( currentVideoGrabber.IsValid()) {
+		return currentVideoGrabber->getTexture();
+	}
+	return nullptr;
 }
 

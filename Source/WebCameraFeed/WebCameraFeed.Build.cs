@@ -41,6 +41,7 @@ public class WebCameraFeed : ModuleRules
 	public WebCameraFeed(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		OptimizeCode = CodeOptimization.Never;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
@@ -64,6 +65,8 @@ public class WebCameraFeed : ModuleRules
 				"Core",
 				// ... add other public dependencies that you statically link with here ...
 				"UMG",
+				"RenderCore",
+				"RHI",
 			}
 			);
 			
