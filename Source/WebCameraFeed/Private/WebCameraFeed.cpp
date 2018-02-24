@@ -1,6 +1,7 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "WebCameraFeed.h"
+#include "VideoGrabberPool.h"
 
 #define LOCTEXT_NAMESPACE "FWebCameraFeedModule"
 
@@ -19,8 +20,7 @@ void FWebCameraFeedModule::StartupModule()
 
 void FWebCameraFeedModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	VideoGrabberPool::ReleaseInstance();
 }
 
 #undef LOCTEXT_NAMESPACE

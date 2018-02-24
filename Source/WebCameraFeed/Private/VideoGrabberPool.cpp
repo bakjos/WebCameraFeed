@@ -23,7 +23,10 @@ VideoGrabberPool* VideoGrabberPool::Instance = nullptr;
 	 
  }
  VideoGrabberPool::~VideoGrabberPool() {
+	 frwLock.WriteLock();
 	 videoGrabbers.Empty();
+	 videoGrabberReferences.Empty();
+	 frwLock.WriteUnlock();
  }
 
 TSharedPtr<VideoGrabber>  VideoGrabberPool::GetVideoGrabber ( int device, int widh, int height ) {
