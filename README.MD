@@ -15,4 +15,9 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
 2. You can clone the repository to `<Game>/Plugins/` or if you want you can use git submodules to your own git repository. Alternatively, you can copy to the `Engine/Plugins/` if you wish to make the plugin available to all of your projects.
    > Do not forget to run UE4's `Generate Project Files` to account for these changes!
 3. If you want to use the widget component you can follow the first two steps from the [Quick Start Tutorial](hhttps://docs.unrealengine.com/latest/INT/Engine/UMG/QuickStart/2/index.html) but instead of create the text controls you can create a WebCameraWidget inside the Web Camera Category, inside the widget attributes you can choose requested width and height
+
+![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/WebCameraCategory.png?raw=true)
+
+![Camera Settings](https://github.com/bakjos/WebCameraFeed/blob/master/docs/WebCameraSettings.png?raw=true)
+
 4. If you want to use the actor component, the following is a small blue print to render the feed inside a BlueprintActor
