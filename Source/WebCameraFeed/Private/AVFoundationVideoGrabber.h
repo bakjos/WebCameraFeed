@@ -4,10 +4,51 @@
 
 #include "CoreMinimal.h"
 #include "BaseVideoGrabber.h"
+#if PLATFORM_MAC
+
+#import <Foundation/Foundation.h>
+#import <AVFoundation/AVFoundation.h>
+#import <Accelerate/Accelerate.h>
+#import <CoreMedia/CoreMedia.h>
+#import <CoreVideo/CoreVideo.h>
+
+class AVFoundationVideoGrabber;
+
+@interface OSXVideoGrabber : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate> {
+    
+@public
+    CGImageRef currentFrame;
+    
+    int width;
+    int height;
+    
+    BOOL bInitCalled;
+    int deviceID;
+    
+    AVCaptureDeviceInput        *captureInput;
+    AVCaptureVideoDataOutput    *captureOutput;
+    AVCaptureDevice                *device;
+    AVCaptureSession            *captureSession;
+    
+    AVFoundationVideoGrabber * grabberPtr;
+}
+
+-(BOOL)initCapture:(int)framerate capWidth:(int)w capHeight:(int)h capMirror:(BOOL)mirror;
+-(void)startCapture;
+-(void)stopCapture;
+-(void)lockExposureAndFocus;
+-(TArray <FString>)listDevices;
+-(void)setDevice:(int)_device;
+-(void)eraseGrabberPtr;
+
+-(CGImageRef)getCurrentFrame;
+
+@end
+
 /**
  * 
  */
-#if PLATFORM_MAC
+
 class AVFoundationVideoGrabber: public BaseVideoGrabber
 {
 public:
@@ -22,10 +63,26 @@ public:
 
 	void update() override;
 
-	bool setup(int w, int h) override;
+	bool setup(int w, int h, bool mirrored) override;
 
 	int getHeight() const override;
 
 	int getWidth() const override;
+    
+protected:
+    bool newFrame = false;
+    bool bHavePixelsChanged = false;
+    void clear();
+    int width, height;
+    
+    int device = 0;
+    bool bIsInit = false;
+    
+    int fps  = -1;
+    
+    OSXVideoGrabber * grabber;
+public:
+    void updatePixelsCB(unsigned char *isrc, int w, int h );
+    bool bLock ;
 };
 #endif

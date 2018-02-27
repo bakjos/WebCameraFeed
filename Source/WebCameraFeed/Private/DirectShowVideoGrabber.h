@@ -27,7 +27,7 @@ public:
 
 	void update() override;
 
-	bool setup(int w, int h) override;
+	bool setup(int w, int h, bool mirrored) override;
 
 	int getHeight() const override;
 

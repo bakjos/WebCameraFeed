@@ -24,6 +24,10 @@ class WEBCAMERAFEED_API UWebCameraWidget : public UWidget
 public:
 	~UWebCameraWidget();
 	
+    virtual void BeginDestroy() override;
+    
+    virtual void ReleaseSlateResources(bool bReleaseChildren) override;
+   
 
 	UPROPERTY(EditAnywhere, Category = WebCamera)
 	FWebCameraDeviceId  DeviceId;
@@ -33,10 +37,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = WebCamera)
 	int requestedHeight;
-
-
-
-
+    
+    UPROPERTY(EditAnywhere, Category = WebCamera)
+    bool MirroredVideo;
+    
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Appearance, meta = (sRGB = "true"))
 	FLinearColor ColorAndOpacity;
 
@@ -47,7 +51,14 @@ public:
 public:
 	UFUNCTION(BlueprintCallable, Category="Appearance")
 	void SetColorAndOpacity(FLinearColor InColorAndOpacity);
+    
+    UFUNCTION(BlueprintCallable, Category="WebCamera")
+    bool SaveAsImage(const FString& FileName);
 
+#if WITH_EDITOR
+    virtual const FText GetPaletteCategory() override;
+#endif
+    
 protected:
 	//~ Begin UWidget Interface
 	virtual TSharedRef<SWidget> RebuildWidget() override;

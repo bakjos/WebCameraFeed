@@ -12,7 +12,7 @@ public:
 	static VideoGrabberPool* const GetInstance();
 	static void ReleaseInstance();
 
-	static TSharedPtr<VideoGrabber> GetVideoGrabber ( int device, int widh, int height );
+	static TSharedPtr<VideoGrabber> GetVideoGrabber ( int device, int widh, int height, bool mirrored  );
 
 	static void ReleaseVideoGrabber(TSharedPtr<VideoGrabber> videoGrabber);
 
@@ -23,7 +23,7 @@ private:
 	VideoGrabberPool();
 	~VideoGrabberPool();
 
-	TSharedPtr<VideoGrabber> GetVideoGrabberInternal ( int device, int widh, int height );
+	TSharedPtr<VideoGrabber> GetVideoGrabberInternal ( int device, int widh, int height, bool mirrored );
 	void ReleaseVideoGrabberInternal(TSharedPtr<VideoGrabber> videoGrabber);
 
 	TMap<int, TSharedPtr<VideoGrabber>> videoGrabbers;

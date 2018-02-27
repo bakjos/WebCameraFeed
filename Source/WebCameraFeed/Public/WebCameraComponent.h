@@ -28,10 +28,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = WebCamera)
 	int requestedHeight;
 
-	
 	UFUNCTION(Category = WebCamera, BlueprintCallable)
 	UTexture2D* GetTexture();
+    
+    UPROPERTY(EditAnywhere, Category = WebCamera)
+    bool MirroredVideo;
 	
+    UFUNCTION(BlueprintCallable, Category="WebCamera")
+    bool SaveAsImage(const FString& FileName);
 
 protected:
 	// Called when the game starts

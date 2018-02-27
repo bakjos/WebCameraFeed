@@ -39,7 +39,7 @@ TArray<FVideoDevice> DirectShowVideoGrabber::listDevices() const{
 	return devices;
 }
 
-bool DirectShowVideoGrabber::setup(int w, int h) {
+bool DirectShowVideoGrabber::setup(int w, int h, bool mirrored) {
 	if (bChooseDevice) {
 		device = deviceID;
 		UE_LOG(LogVideoGrabber, Verbose,  TEXT("initGrabber(): choosing %d"), deviceID);
@@ -70,6 +70,7 @@ bool DirectShowVideoGrabber::setup(int w, int h) {
 			width = ourRequestedWidth;
 			height = ourRequestedHeight;
 		}
+        setVideoMirrored(mirrored);
 		allocateData(width, height);
 		startThread();
 		return true;
@@ -104,21 +105,6 @@ void DirectShowVideoGrabber::update() {
 
 						float posx = i * scaleW;
 						float posy = j * scaleH;
-
-						/*
-
-						// start of calculating
-						// for linear interpolation
-
-						int xbase = (int)floor(posx);
-						int xhigh = (int)ceil(posx);
-						float pctx = (posx - xbase);
-
-						int ybase = (int)floor(posy);
-						int yhigh = (int)ceil(posy);
-						float pcty = (posy - ybase);
-						*/
-
 						int posPix = (((int)posy * inputW * 3) + ((int)posx * 3));
 
 						pixels.GetData()[(j*width * 4) + i * 4] = viPixels[posPix];

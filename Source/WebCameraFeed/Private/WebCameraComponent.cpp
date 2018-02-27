@@ -14,6 +14,7 @@ UWebCameraComponent::UWebCameraComponent()
 	DeviceId.selectedDevice = 0;
 	requestedWidth = 640;
 	requestedHeight = 480;
+    MirroredVideo = true;
 }
 
 
@@ -21,7 +22,7 @@ UWebCameraComponent::UWebCameraComponent()
 void UWebCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	currentVideoGrabber = VideoGrabberPool::GetVideoGrabber(DeviceId.selectedDevice, requestedWidth, requestedHeight);
+	currentVideoGrabber = VideoGrabberPool::GetVideoGrabber(DeviceId.selectedDevice, requestedWidth, requestedHeight, MirroredVideo);
 	
 }
 
@@ -32,6 +33,17 @@ void UWebCameraComponent::EndPlay(const EEndPlayReason::Type EndPlayReason) {
 	}
 }
 
+
+bool UWebCameraComponent::SaveAsImage(const FString& FileName) {
+    if (currentVideoGrabber.IsValid()) {
+        const FString ScreenShotPath = FPaths::GetPath(FileName);
+        if ( IFileManager::Get().MakeDirectory(*ScreenShotPath, true) ){
+            FString AbsoluteFilename = FPaths::ConvertRelativePathToFull(FileName);
+            return currentVideoGrabber->saveTextureAsFile(AbsoluteFilename);
+        }
+    }
+    return false;
+}
 
 // Called every frame
 void UWebCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)

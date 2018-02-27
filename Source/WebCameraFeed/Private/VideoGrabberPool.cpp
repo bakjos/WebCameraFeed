@@ -29,12 +29,12 @@ VideoGrabberPool* VideoGrabberPool::Instance = nullptr;
 	 frwLock.WriteUnlock();
  }
 
-TSharedPtr<VideoGrabber>  VideoGrabberPool::GetVideoGrabber ( int device, int widh, int height ) {
-	return GetInstance()->GetVideoGrabberInternal(device, widh, height);
+TSharedPtr<VideoGrabber>  VideoGrabberPool::GetVideoGrabber ( int device, int widh, int height, bool mirrored ) {
+	return GetInstance()->GetVideoGrabberInternal(device, widh, height, mirrored);
 }
 
 
-TSharedPtr<VideoGrabber> VideoGrabberPool::GetVideoGrabberInternal ( int device, int widh, int height ) {
+TSharedPtr<VideoGrabber> VideoGrabberPool::GetVideoGrabberInternal ( int device, int widh, int height, bool mirrored ) {
 	frwLock.ReadLock();
 	if ( videoGrabbers.Contains(device) ) {
 		frwLock.ReadUnlock();	
@@ -47,7 +47,7 @@ TSharedPtr<VideoGrabber> VideoGrabberPool::GetVideoGrabberInternal ( int device,
 		frwLock.WriteLock();
 		TSharedPtr<VideoGrabber>  videoGrabber ( new VideoGrabber());
 		videoGrabber->setDeviceID(device);
-		if ( videoGrabber->setup(widh, height) ) {
+		if ( videoGrabber->setup(widh, height, mirrored) ) {
 			videoGrabbers.Add(device, videoGrabber);
 			videoGrabberReferences.Add(device, 1);
 		} else {
@@ -68,6 +68,7 @@ void VideoGrabberPool::ReleaseVideoGrabberInternal(TSharedPtr<VideoGrabber> vide
 		
 		videoGrabberReferences[videoGrabber->getDeviceID()]--;
 		if ( videoGrabberReferences[videoGrabber->getDeviceID()] == 0) {
+            videoGrabber->close();
 			videoGrabbers.Remove(videoGrabber->getDeviceID());
 			videoGrabberReferences.Remove(videoGrabber->getDeviceID());
 		}

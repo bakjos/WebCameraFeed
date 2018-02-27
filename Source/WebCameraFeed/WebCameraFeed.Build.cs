@@ -67,6 +67,7 @@ public class WebCameraFeed : ModuleRules
 				"UMG",
 				"RenderCore",
 				"RHI",
+                "ShaderCore",
 			}
 			);
 			
