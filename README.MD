@@ -20,4 +20,20 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
 
 ![Camera Settings](https://github.com/bakjos/WebCameraFeed/blob/master/docs/WebCameraSettings.png?raw=true)
 
-4. If you want to use the actor component, the following is a small blue print to render the feed inside a BlueprintActor
+4. If you want to use the actor component you'll need to do the following:
+	- Create a material with a TextureSamplerParameter2D parameter
+		
+		![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/Material.png?raw=true)
+
+		![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/TextureSamplerParameter2D.png?raw=true)
+		
+
+	- Create a blue print actor and add a Web Camera component
+	  
+	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActorComponent.png?raw=true)
+
+	 - Put inside the creation script the dynamic material creation and assign the web camera texture to the TextureSamplerParameter2D parameter
+	  
+	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActor.png?raw=true)
+
+	  A sample material and a sample blue print actor are inside the Content folder
