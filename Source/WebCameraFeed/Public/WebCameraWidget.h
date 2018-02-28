@@ -55,6 +55,9 @@ public:
     UFUNCTION(BlueprintCallable, Category="WebCamera")
     bool SaveAsImage(const FString& FileName);
 
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	void SetDeviceId(int id);
+
 #if WITH_EDITOR
     virtual const FText GetPaletteCategory() override;
 #endif

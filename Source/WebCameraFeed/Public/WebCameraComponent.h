@@ -37,6 +37,13 @@ public:
     UFUNCTION(BlueprintCallable, Category="WebCamera")
     bool SaveAsImage(const FString& FileName);
 
+
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	static TArray<FString> ListDevices();
+
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	void SetDeviceId(int id);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

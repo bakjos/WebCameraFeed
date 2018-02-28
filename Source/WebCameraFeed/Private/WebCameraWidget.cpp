@@ -78,6 +78,20 @@ const FSlateBrush* UWebCameraWidget::ConvertImage(TAttribute<FSlateBrush> InImag
 	return &CameraBrush;
 }
 
+void  UWebCameraWidget::SetDeviceId(int id) {
+	if (currentVideoGrabber.IsValid()) {
+		if (currentVideoGrabber->getDeviceID() == id) {
+			return;
+		}
+		VideoGrabberPool::ReleaseVideoGrabber(currentVideoGrabber);
+	}
+	DeviceId.selectedDevice = id;
+	if (MyImage.IsValid())
+	{
+		currentVideoGrabber = VideoGrabberPool::GetVideoGrabber(DeviceId.selectedDevice, requestedWidth, requestedHeight, MirroredVideo);
+		MyImage->SetVideoGrabber(currentVideoGrabber);
+	}
+}
 
 void UWebCameraWidget::SetColorAndOpacity(FLinearColor InColorAndOpacity)
 {

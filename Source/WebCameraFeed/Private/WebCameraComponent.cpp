@@ -60,3 +60,24 @@ UTexture* UWebCameraComponent::GetTexture() {
 	return nullptr;
 }
 
+
+void  UWebCameraComponent::SetDeviceId(int id) {
+	if (currentVideoGrabber.IsValid()) {
+		if ( currentVideoGrabber->getDeviceID() == id) {
+			return;
+		}
+		VideoGrabberPool::ReleaseVideoGrabber(currentVideoGrabber);
+	}
+	DeviceId.selectedDevice = id;
+	currentVideoGrabber = VideoGrabberPool::GetVideoGrabber(DeviceId.selectedDevice, requestedWidth, requestedHeight, MirroredVideo);
+}
+
+TArray<FString>  UWebCameraComponent::ListDevices() {
+	VideoGrabber videoGrabber;
+	TArray<FString>  devices;
+	TArray<FVideoDevice>  _devices = videoGrabber.listDevices();
+	for ( int i = 0; i < _devices.Num(); i++) {
+		devices.Add(_devices[i].deviceName);
+	}
+	return devices;
+}
