@@ -9,10 +9,10 @@ SWebCameraImage::SWebCameraImage() {
 
 void SWebCameraImage::Tick( const FGeometry& AllottedGeometry, const double InCurrentTime, const float InDeltaTime ) {
 	if ( videoGrabber.IsValid() && videoGrabber->isFrameNew() ) {
-		UTexture2D* texture = (UTexture2D*)videoGrabber->getTexture();
+		UTexture* texture = videoGrabber->getTexture();
 		Brush.SetResourceObject(texture);
-		Brush.ImageSize.X = texture->GetSizeX();
-		Brush.ImageSize.Y = texture->GetSizeY();
+		Brush.ImageSize.X = videoGrabber->getWidth();
+		Brush.ImageSize.Y =  videoGrabber->getHeight();
 		Image = &Brush;
 		Invalidate(EInvalidateWidget::LayoutAndVolatility);
 	}

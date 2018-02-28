@@ -58,7 +58,7 @@ uint32 BaseVideoGrabber::Run() {
 	return 0;
 }
 
-void BaseVideoGrabber:: allocateData(int w, int h, EPixelFormat InFormat) {
+void BaseVideoGrabber::allocateData(int w, int h, EPixelFormat InFormat) {
 	
 	uint32 MemorySize = w*h * 4;
 	pixels.Reset();
@@ -67,148 +67,94 @@ void BaseVideoGrabber:: allocateData(int w, int h, EPixelFormat InFormat) {
     
     
     
-    struct FUpdateTextureResourceData
-    {
-        UTexture2D* texture;
-        UTexture2D* mirroredTexture;
-    };
-   
-    
-    
     cameraTexture = UTexture2D::CreateTransient(w, h, InFormat);
-    
-    FUpdateTextureResourceData* data = new FUpdateTextureResourceData();
-    data->texture = cameraTexture.Get();
-
-
-    if ( mirrored) {
-        mirroredTexture = UTexture2D::CreateTransient(w, h, InFormat);
-        data->mirroredTexture = mirroredTexture.Get();
-    } else {
-        data->mirroredTexture = nullptr;
-    }
-   
-    
-	ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-	UpdateTextureResource,
-	FUpdateTextureResourceData*, data, data,
-	{
-		data->texture->UpdateResource();
-        if ( data->mirroredTexture != nullptr) {
-            data->mirroredTexture->UpdateResource();
-            
-        }
-        delete data;
-	});
-    
-    
-    
+	FTexture2DMipMap& Mip = cameraTexture->PlatformData->Mips[0];
+	void* Data = Mip.BulkData.Lock(LOCK_READ_WRITE);
+	FMemory::Memcpy(Data, pixels.GetData(), MemorySize);
+	Mip.BulkData.Unlock();
+	cameraTexture->UpdateResource();
+	
+	if (mirrored) {
+		mirroredTexture = NewObject<UTextureRenderTarget2D>();
+		mirroredTexture->InitCustomFormat(w, h, PF_B8G8R8A8, false);
+	}    
 
 }
 
-void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors) {
-	struct FUpdateTextureRegionsData
-	{
-		FTexture2DResource* Texture2DResource;
-        FTexture2DResource* Mirrored2DResource;
-		int32 MipIndex;
-		FUpdateTextureRegion2D Region;
-		uint32 SrcPitch;
-		uint32 SrcBpp;
-		uint8* SrcData;
-        FDepthStencilStateRHIParamRef DepthStencilState;
-	};
-    
-    static FGlobalBoundShaderState BoundShaderState;
-    
-	FUpdateTextureRegionsData* RegionData = new FUpdateTextureRegionsData;
-	if ( cameraTexture.IsValid() ) {
-		RegionData->Texture2DResource = (FTexture2DResource*)cameraTexture->Resource;
-		RegionData->MipIndex = 0;
-		RegionData->Region = FUpdateTextureRegion2D(0, 0, 0, 0, TextureWidth, TextureHeight);;
-		RegionData->SrcPitch = (uint32)(numColors * TextureWidth); //TODO: Clap to 32bits
-		RegionData->SrcBpp = (uint32)numColors;
-		RegionData->SrcData = pData;
+void  BaseVideoGrabber::mirrorTexture_RenderThread(FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState) {
+	if (MirrorTextureRef != nullptr) {
+		::SetRenderTarget(RHICmdList, MirrorTextureRef->GetRenderTargetTexture(), FTextureRHIRef());
 
-        if ( mirrored && mirroredTexture.IsValid()) {
-            RegionData->Mirrored2DResource = (FTexture2DResource*)mirroredTexture->Resource;
-            RegionData->DepthStencilState= TStaticDepthStencilState<false, CF_Always>::GetRHI();
-            
-        } else {
-            RegionData->Mirrored2DResource = nullptr;
-        }
-        
-        
-        ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
-        if ( GEngine->GetWorld() != nullptr && GEngine->GetWorld()->Scene != nullptr ) {
-            FeatureLevel = GEngine->GetWorld()->Scene->GetFeatureLevel();
-        }
+		RHICmdList.SetViewport(
+			0, 0, 0.f,
+			TextureRHIRef->GetSizeX(), TextureRHIRef->GetSizeY(), 1.f);
 
-		ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-			UpdateTextureRegionsData,
-			FUpdateTextureRegionsData*, RegionData, RegionData,
-			{
-				int32 CurrentFirstMip = RegionData->Texture2DResource->GetCurrentFirstMip();
-				if (RegionData->MipIndex >= CurrentFirstMip)
-				{
-					RHIUpdateTexture2D(RegionData->Texture2DResource->GetTexture2DRHI(),
-						RegionData->MipIndex - CurrentFirstMip,
-						RegionData->Region,
-						RegionData->SrcPitch,
-						RegionData->SrcData + RegionData->Region.SrcY * RegionData->SrcPitch + RegionData->Region.SrcX * RegionData->SrcBpp);
-				}
-                
-                if ( RegionData->Mirrored2DResource != nullptr) {
-                    
-                  
-                    ::SetRenderTarget(RHICmdList, RegionData->Mirrored2DResource->GetTexture2DRHI(), FTextureRHIRef());
-                    
-                    RHICmdList.SetViewport(
-                                           0, 0, 0.f,
-                                           RegionData->Mirrored2DResource->GetSizeX(), RegionData->Mirrored2DResource->GetSizeY(), 1.f);
-                    
-                    ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
-                    
-                    TShaderMapRef<FWebCameraMirrorVS> VertexShader(GetGlobalShaderMap(FeatureLevel));
-                    TShaderMapRef<FWebCameraMirrorPS> PixelShader(GetGlobalShaderMap(FeatureLevel));
-                    
-                    
-                    FGraphicsPipelineStateInitializer GraphicsPSOInit;
-                    RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-                    GraphicsPSOInit.DepthStencilState = RegionData->DepthStencilState;
-                    GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-                    GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
-                    GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
-                    GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
-                    GraphicsPSOInit.BoundShaderState.VertexShaderRHI = GETSAFERHISHADER_VERTEX(*VertexShader);
-                    GraphicsPSOInit.BoundShaderState.PixelShaderRHI = GETSAFERHISHADER_PIXEL(*PixelShader);
-                    
-                    SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
-                    
-        
-                    PixelShader->SetParameters(RHICmdList,  RegionData->Texture2DResource->GetTexture2DRHI(), true );
-                    
-                    // Draw a fullscreen quad that we can run our pixel shader on
-                    FTextureVertex Vertices[4];
-                    Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
-                    Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
-                    Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
-                    Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
-                    Vertices[0].UV = FVector2D(0, 0);
-                    Vertices[1].UV = FVector2D(1, 0);
-                    Vertices[2].UV = FVector2D(0, 1);
-                    Vertices[3].UV = FVector2D(1, 1);
-                    
-                    DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
-                    
-                }
+		ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
 
-				delete RegionData;
-			});
+		TShaderMapRef<FWebCameraMirrorVS> VertexShader(GetGlobalShaderMap(FeatureLevel));
+		TShaderMapRef<FWebCameraMirrorPS> PixelShader(GetGlobalShaderMap(FeatureLevel));
+
+
+		FGraphicsPipelineStateInitializer GraphicsPSOInit;
+		RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+		GraphicsPSOInit.DepthStencilState = DepthStencilState;
+		GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+		GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
+		GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
+		GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
+		GraphicsPSOInit.BoundShaderState.VertexShaderRHI = GETSAFERHISHADER_VERTEX(*VertexShader);
+		GraphicsPSOInit.BoundShaderState.PixelShaderRHI = GETSAFERHISHADER_PIXEL(*PixelShader);
+
+		SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
+		PixelShader->SetParameters(RHICmdList, TextureRHIRef, true);
+
+		// Draw a fullscreen quad that we can run our pixel shader on
+		FTextureVertex Vertices[4];
+		Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
+		Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
+		Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
+		Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
+		Vertices[0].UV = FVector2D(0, 0);
+		Vertices[1].UV = FVector2D(1, 0);
+		Vertices[2].UV = FVector2D(0, 1);
+		Vertices[3].UV = FVector2D(1, 1);
+
+		DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
 	}
 }
 
-UTexture2D* BaseVideoGrabber::getTexture() {
+void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors) {
+
+
+	if (cameraTexture.IsValid()) {
+		FUpdateTextureRegion2D region(0, 0, 0, 0, TextureWidth, TextureHeight);
+		cameraTexture->UpdateTextureRegions(0, 1, &region, TextureWidth*numColors, numColors, pData);
+		if ( mirrored && mirroredTexture.IsValid()) {
+
+			struct FUpdateTextureRegionsData
+			{
+				FTextureRenderTargetResource* MirrorTextureResource;
+				FTexture2DRHIRef	TextureRHIRef;
+			};
+			FUpdateTextureRegionsData* RegionData = new FUpdateTextureRegionsData;
+			RegionData->MirrorTextureResource = static_cast<FTextureRenderTarget2DResource*>( mirroredTexture->Resource );
+			RegionData->TextureRHIRef = static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI();
+			
+			ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+			UpdateTextureRegionsData,
+			FUpdateTextureRegionsData*, RegionData, RegionData,
+			{
+				mirrorTexture_RenderThread(RHICmdList, RegionData->TextureRHIRef, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
+				delete RegionData;
+			});
+
+		}
+	}
+
+
+}
+
+UTexture* BaseVideoGrabber::getTexture() {
     if ( mirrored && mirroredTexture.IsValid()) {
         return mirroredTexture.Get();
     }
@@ -229,5 +175,11 @@ void BaseVideoGrabber::setVideoMirrored( bool mirrored ) {
 
 
 bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
-    return ImageUtility::SaveTextureAsFile(cameraTexture.Get(), fileName);
+	UTexture* texture = getTexture();
+	if ( texture != nullptr ) {
+		return ImageUtility::SaveTextureAsFile(mirrored?
+			static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI(): 
+			static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI(), fileName);
+	}
+	return false;
 }

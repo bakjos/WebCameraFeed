@@ -53,7 +53,7 @@ void UWebCameraComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	// ...
 }
 
-UTexture2D* UWebCameraComponent::GetTexture() {
+UTexture* UWebCameraComponent::GetTexture() {
 	if ( currentVideoGrabber.IsValid()) {
 		return currentVideoGrabber->getTexture();
 	}

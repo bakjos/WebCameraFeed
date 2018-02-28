@@ -47,10 +47,10 @@ void ImageUtility::CompressImageArray(int32 ImageWidth, int32 ImageHeight, const
     
 }
 
-bool ImageUtility::SaveTextureAsFile (UTexture2D* texture, const FString& fileName ) {
+bool ImageUtility::SaveTextureAsFile (FTexture2DRHIRef texture, const FString& fileName ) {
     struct FGetTextureData
     {
-        UTexture2D* texture;
+        FTexture2DRHIRef texture;
         TArray<FColor> Bitmap;
         bool bExtracted;
         FEvent* fSemaphore;
@@ -70,7 +70,7 @@ bool ImageUtility::SaveTextureAsFile (UTexture2D* texture, const FString& fileNa
            FIntRect rect  = FIntRect(0, 0, data->texture->GetSizeX(), data->texture->GetSizeY());
            data->Bitmap.Reset();
            RHICmdList.ReadSurfaceData(
-                                      static_cast<FTexture2DResource*>(data->texture->Resource)->GetTexture2DRHI(),
+                                      data->texture,
                                       rect,
                                       data->Bitmap,
                                       FReadSurfaceDataFlags()

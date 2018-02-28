@@ -14,7 +14,7 @@ class WEBCAMERAFEED_API ImageUtility
 public:
     static void CompressImageArray(int32 ImageWidth, int32 ImageHeight, const TArray<FColor> &SrcData, TArray<uint8> &DstData);
     
-    static bool SaveTextureAsFile (UTexture2D* texture, const FString& fileName );
+    static bool SaveTextureAsFile (FTexture2DRHIRef texture, const FString& fileName );
     
 private:
 	ImageUtility();

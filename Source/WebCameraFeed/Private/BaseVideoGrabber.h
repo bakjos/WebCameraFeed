@@ -8,6 +8,7 @@
 #include "Runnable.h"
 #include "RunnableThread.h"
 #include <Engine/Texture2D.h>
+#include <Engine/TextureRenderTarget2D.h>
 #include "PixelShaderDeclaration.h"
 
 
@@ -43,7 +44,7 @@ public:
 
 	virtual int getWidth() const = 0;
 
-	UTexture2D* getTexture();
+	UTexture* getTexture();
     
     bool isVideoMirrored();
     
@@ -57,14 +58,16 @@ protected:
 	void copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors);
 	void startThread();
 	void stopThread();
+	static void mirrorTexture_RenderThread(FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState);
 
 	FRunnableThread* runnableThread;
 	bool _running;
 	int deviceID;
 
 	TArray<uint8>	pixels;
-	TWeakObjectPtr<UTexture2D> 				cameraTexture;
-    TWeakObjectPtr<UTexture2D>              mirroredTexture;
+	TWeakObjectPtr<UTexture2D>				cameraTexture;
+    TWeakObjectPtr<UTextureRenderTarget2D>  mirroredTexture;
+	
     
     bool  mirrored;
     FRWLock  frwLock;

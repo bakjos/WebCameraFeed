@@ -104,6 +104,7 @@ public:
 
 		Ar << TextureParameter;
         Ar << TextureParameterSampler;
+		Ar << mirrorParameter;
 
 		return bShaderHasOutdatedParams;
 	}

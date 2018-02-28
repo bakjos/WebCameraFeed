@@ -29,7 +29,7 @@ public:
 	int requestedHeight;
 
 	UFUNCTION(Category = WebCamera, BlueprintCallable)
-	UTexture2D* GetTexture();
+	UTexture* GetTexture();
     
     UPROPERTY(EditAnywhere, Category = WebCamera)
     bool MirroredVideo;
