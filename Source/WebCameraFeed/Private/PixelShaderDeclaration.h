@@ -73,12 +73,13 @@ class FWebCameraMirrorVS : public FGlobalShader
 public:
 
 	static bool ShouldCache(EShaderPlatform Platform) { return true; }
-    
+#if (ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 18))  
     /** Should the shader be cached? Always. */
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
     {
         return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM4) && !IsConsolePlatform(Parameters.Platform);
     }
+#endif
 
 	FWebCameraMirrorVS(const ShaderMetaType::CompiledShaderInitializerType& Initializer) :
 		FGlobalShader(Initializer)
@@ -103,12 +104,14 @@ public:
 	explicit FWebCameraMirrorPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
 
 	static bool ShouldCache(EShaderPlatform Platform) { return IsFeatureLevelSupported(Platform, ERHIFeatureLevel::SM5); }
-    
+ 
+#if (ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 18))   
     /** Should the shader be cached? Always. */
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
     {
         return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM4) && !IsConsolePlatform(Parameters.Platform);
     }
+#endif
 
 	virtual bool Serialize(FArchive& Ar) override
 	{
