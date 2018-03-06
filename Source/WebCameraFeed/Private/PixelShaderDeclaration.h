@@ -28,6 +28,7 @@
 #include "UniformBuffer.h"
 #include "RHICommandList.h"
 #include "ShaderParameterUtils.h"
+#include <Runtime/Launch/Resources/Version.h>
 
 
 
