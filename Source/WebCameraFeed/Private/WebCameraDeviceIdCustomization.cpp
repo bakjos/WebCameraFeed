@@ -1,5 +1,6 @@
 #include "WebCameraDeviceIdCustomization.h"
 
+#if WITH_EDITOR
 #include "Framework/Application/SlateApplication.h"
 
 #include "PropertyHandle.h"
@@ -80,3 +81,4 @@ void  FWebCameraDeviceIdCustomization::OnSelectionChanged(TSharedPtr<FString> va
 		
 	}
 }
+#endif

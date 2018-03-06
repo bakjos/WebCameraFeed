@@ -28,7 +28,7 @@ TArray<FVideoDevice> DirectShowVideoGrabber::listDevices() const{
 	TArray<FVideoDevice> devices;
 	std::vector <std::string> devList = VI.getDeviceList();
 
-	for (int i = 0; i < devList.size(); i++) {
+	for (size_t i = 0; i < devList.size(); i++) {
 		FVideoDevice vd;
 		vd.deviceName = UTF8_TO_TCHAR(devList[i].c_str());
 		vd.id = i;

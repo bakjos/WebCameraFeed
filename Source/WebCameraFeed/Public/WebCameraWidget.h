@@ -16,7 +16,7 @@ class SImage;
 /**
  * 
  */
-UCLASS()
+UCLASS(Config=Game)
 class WEBCAMERAFEED_API UWebCameraWidget : public UWidget
 {
 	GENERATED_UCLASS_BODY()
@@ -29,16 +29,16 @@ public:
     virtual void ReleaseSlateResources(bool bReleaseChildren) override;
    
 
-	UPROPERTY(EditAnywhere, Category = WebCamera)
+	UPROPERTY(EditAnywhere, Category = WebCamera, Config)
 	FWebCameraDeviceId  DeviceId;
 
-	UPROPERTY(EditAnywhere, Category = WebCamera)
+	UPROPERTY(EditAnywhere, Category = WebCamera, Config)
 	int requestedWidth;
 
-	UPROPERTY(EditAnywhere, Category = WebCamera)
+	UPROPERTY(EditAnywhere, Category = WebCamera, Config)
 	int requestedHeight;
     
-    UPROPERTY(EditAnywhere, Category = WebCamera)
+    UPROPERTY(EditAnywhere, Category = WebCamera, Config)
     bool MirroredVideo;
     
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Appearance, meta = (sRGB = "true"))

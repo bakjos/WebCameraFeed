@@ -1,5 +1,6 @@
 #pragma once
 
+#if WITH_EDITOR
 #include "CoreMinimal.h"
 #include "Widgets/SWidget.h"
 #include "Editor/PropertyEditor/Public/IPropertyTypeCustomization.h"
@@ -38,3 +39,4 @@ protected:
 	TArray<FVideoDevice> devices;
 	TArray< TSharedPtr<FString>> options;
 };
+#endif

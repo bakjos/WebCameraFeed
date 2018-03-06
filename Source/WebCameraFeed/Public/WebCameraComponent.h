@@ -10,7 +10,7 @@
 #include "WebCameraComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(WebCamera), meta=(BlueprintSpawnableComponent), Config=Game )
 class WEBCAMERAFEED_API UWebCameraComponent : public USceneComponent
 {
 	GENERATED_BODY()
@@ -19,19 +19,19 @@ public:
 	// Sets default values for this component's properties
 	UWebCameraComponent();
 
-	UPROPERTY(EditAnywhere, Category = WebCamera)
+	UPROPERTY(EditAnywhere, Category = WebCamera, Config)
 	FWebCameraDeviceId  DeviceId;
 
-	UPROPERTY(EditAnywhere, Category = WebCamera)
+	UPROPERTY(EditAnywhere, Category = WebCamera, Config)
 	int requestedWidth;
 
-	UPROPERTY(EditAnywhere, Category = WebCamera)
+	UPROPERTY(EditAnywhere, Category = WebCamera, Config)
 	int requestedHeight;
 
 	UFUNCTION(Category = WebCamera, BlueprintCallable)
 	UTexture* GetTexture();
     
-    UPROPERTY(EditAnywhere, Category = WebCamera)
+    UPROPERTY(EditAnywhere, Category = WebCamera, Config)
     bool MirroredVideo;
 	
     UFUNCTION(BlueprintCallable, Category="WebCamera")
