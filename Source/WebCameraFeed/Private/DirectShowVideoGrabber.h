@@ -32,6 +32,8 @@ public:
 	int getHeight() const override;
 
 	int getWidth() const override;
+    
+    bool switchBackAndFront() override { return false; }
 
 protected:
 	int width;

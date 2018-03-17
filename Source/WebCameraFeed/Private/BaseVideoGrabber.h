@@ -51,6 +51,8 @@ public:
     void setVideoMirrored( bool mirrored );
 
     bool saveTextureAsFile (const FString& fileName );
+    
+    virtual bool switchBackAndFront() = 0;
 
     
 protected:

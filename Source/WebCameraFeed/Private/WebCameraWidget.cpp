@@ -78,6 +78,13 @@ const FSlateBrush* UWebCameraWidget::ConvertImage(TAttribute<FSlateBrush> InImag
 	return &CameraBrush;
 }
 
+bool UWebCameraWidget::SwitchFrontAndBackCamera() {
+    if (currentVideoGrabber.IsValid()) {
+        return currentVideoGrabber->switchBackAndFront();
+    }
+    return false;
+}
+
 void  UWebCameraWidget::SetDeviceId(int id) {
 	if (currentVideoGrabber.IsValid()) {
 		if (currentVideoGrabber->getDeviceID() == id) {

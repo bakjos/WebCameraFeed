@@ -57,6 +57,9 @@ public:
 
 	UFUNCTION(Category = "WebCamera", BlueprintCallable)
 	void SetDeviceId(int id);
+    
+    UFUNCTION(Category = "WebCamera", BlueprintCallable)
+    bool SwitchFrontAndBackCamera();
 
 #if WITH_EDITOR
     virtual const FText GetPaletteCategory() override;

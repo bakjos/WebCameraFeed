@@ -40,7 +40,7 @@ class AVFoundationVideoGrabber;
 -(TArray <FString>)listDevices;
 -(void)setDevice:(int)_device;
 -(void)eraseGrabberPtr;
-
+-(int)switchBackAndFront;
 -(CGImageRef)getCurrentFrame;
 
 @end
@@ -54,6 +54,8 @@ class AVFoundationVideoGrabber: public BaseVideoGrabber
 public:
 	AVFoundationVideoGrabber();
 	virtual ~AVFoundationVideoGrabber();
+    
+    void setDeviceID(int deviceID) override;
 
 	TArray<FVideoDevice>	listDevices() const override;
 
@@ -69,6 +71,8 @@ public:
 
 	int getWidth() const override;
     
+    bool switchBackAndFront() override;
+    
 protected:
     bool newFrame = false;
     bool bHavePixelsChanged = false;
@@ -81,6 +85,7 @@ protected:
     int fps  = -1;
     
     OSXVideoGrabber * grabber;
+
 public:
     void updatePixelsCB(unsigned char *isrc, int w, int h );
     bool bLock ;

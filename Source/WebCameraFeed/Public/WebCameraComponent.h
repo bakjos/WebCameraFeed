@@ -43,6 +43,9 @@ public:
 
 	UFUNCTION(Category = "WebCamera", BlueprintCallable)
 	void SetDeviceId(int id);
+    
+    UFUNCTION(Category = "WebCamera", BlueprintCallable)
+    bool SwitchFrontAndBackCamera();
 
 protected:
 	// Called when the game starts

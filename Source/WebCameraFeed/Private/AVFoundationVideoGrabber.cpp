@@ -257,6 +257,39 @@
     deviceID = _device;
 }
 
+-(int)switchBackAndFront {
+    NSArray * devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    if ( [devices count] > deviceID) {
+        AVCaptureDevice * currentDevice = [devices objectAtIndex:deviceID];
+        for (int i = 0; i < [devices count]; i++){
+            if ( i != deviceID ) {
+                AVCaptureDevice * captureDevice = [devices objectAtIndex:i];
+                if ( [captureDevice position] != [currentDevice position] ) {
+                    if(self.captureSession) {
+                        [self stopCapture];
+                        self.captureSession = nil;
+                    }
+                    if(captureOutput){
+                        if(captureOutput.sampleBufferDelegate != nil) {
+                            [captureOutput setSampleBufferDelegate:nil queue:NULL];
+                        }
+                        [captureOutput release];
+                        captureOutput = nil;
+                    }
+                    deviceID = i;
+                    
+                    [self initCapture:-1 capWidth:width capHeight:height capMirror: false];
+                    
+                    
+                    return i;
+                }
+            }
+        }
+    }
+    return deviceID;
+    
+}
+
 #pragma mark -
 #pragma mark AVCaptureSession delegate
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
@@ -420,6 +453,23 @@ int AVFoundationVideoGrabber::getHeight() const {
 int AVFoundationVideoGrabber::getWidth() const {
     return width;
 	
+}
+
+void AVFoundationVideoGrabber::setDeviceID(int deviceID) {
+    [grabber setDevice:deviceID];
+    device = deviceID;
+    this->deviceID = deviceID;
+}
+
+bool AVFoundationVideoGrabber::switchBackAndFront()  {
+#if PLATFORM_IOS
+    device = [grabber switchBackAndFront];
+    if ( this->deviceID != device) {
+        this->deviceID = device;
+        return true;
+    }
+#endif
+    return false;
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {

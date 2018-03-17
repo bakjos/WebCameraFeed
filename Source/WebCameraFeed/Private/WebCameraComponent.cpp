@@ -81,3 +81,11 @@ TArray<FString>  UWebCameraComponent::ListDevices() {
 	}
 	return devices;
 }
+
+
+bool UWebCameraComponent::SwitchFrontAndBackCamera() {
+    if (currentVideoGrabber.IsValid()) {
+        return currentVideoGrabber->switchBackAndFront();
+    }
+    return false;
+}
