@@ -236,3 +236,25 @@ bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
 	}
 	return false;
 }
+
+
+void BaseVideoGrabber::registerDelegates() {
+    FCoreDelegates::ApplicationWillDeactivateDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler);
+    FCoreDelegates::ApplicationHasReactivatedDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler);
+}
+
+void BaseVideoGrabber::unRegisterDelegates() {
+    FCoreDelegates::ApplicationWillDeactivateDelegate.RemoveAll(this);
+    FCoreDelegates::ApplicationHasReactivatedDelegate.RemoveAll(this);
+}
+
+void BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler() {
+    pause();
+}
+
+void BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler() {
+    resume();
+}
+
+
+

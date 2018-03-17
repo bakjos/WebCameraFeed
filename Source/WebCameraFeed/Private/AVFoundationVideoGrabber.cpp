@@ -373,6 +373,7 @@ AVFoundationVideoGrabber::~AVFoundationVideoGrabber()
 }
 
 void AVFoundationVideoGrabber::close() {
+    unRegisterDelegates();
     bLock = true;
     if(grabber) {
         // Stop and release the the OSXVideoGrabber
@@ -409,10 +410,13 @@ bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
         
         newFrame=false;
         bIsInit = true;
+         registerDelegates();
         return true;
     } else {
         return false;
     }
+    
+   
     
 }
 
@@ -470,6 +474,20 @@ bool AVFoundationVideoGrabber::switchBackAndFront()  {
     }
 #endif
     return false;
+}
+
+void AVFoundationVideoGrabber::pause () {
+    if( grabber == nil ){
+        [grabber stopCapture];
+        stopThread();
+    }
+}
+
+void AVFoundationVideoGrabber::resume () {
+    if( grabber == nil ){
+        startThread();
+        [grabber startCapture];
+    }
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {

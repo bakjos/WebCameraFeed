@@ -74,6 +74,10 @@ public:
     bool switchBackAndFront() override;
     
 protected:
+    
+    void pause() override;
+    void resume() override;
+    
     bool newFrame = false;
     bool bHavePixelsChanged = false;
     void clear();

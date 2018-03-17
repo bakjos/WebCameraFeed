@@ -10,6 +10,7 @@
 #include <Engine/Texture2D.h>
 #include <Engine/TextureRenderTarget2D.h>
 #include "PixelShaderDeclaration.h"
+#include <Misc/CoreDelegates.h>
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogVideoGrabber,Log, All)
@@ -56,6 +57,11 @@ public:
 
     
 protected:
+    virtual void pause() = 0;
+    virtual void resume() = 0;
+    
+    void registerDelegates();
+    void unRegisterDelegates();
 	void allocateData(int w, int h, EPixelFormat InFormat = PF_R8G8B8A8);
     void resizeData(int w, int h, EPixelFormat InFormat = PF_R8G8B8A8);
 	void copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors);
@@ -70,7 +76,9 @@ protected:
 	TArray<uint8>	pixels;
 	TWeakObjectPtr<UTexture2D>				cameraTexture;
     TWeakObjectPtr<UTextureRenderTarget2D>  mirroredTexture;
-	
+    
+    void ApplicationWillDeactivateDelegate_Handler();
+    void ApplicationHasReactivatedDelegate_Handler();	
     
     bool  mirrored;
     FRWLock  frwLock;

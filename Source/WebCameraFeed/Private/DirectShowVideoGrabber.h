@@ -34,8 +34,12 @@ public:
 	int getWidth() const override;
     
     bool switchBackAndFront() override { return false; }
+    
 
 protected:
+    
+    void pause() override {}
+    void resume() override{}
 	int width;
 	int height;
 	bool bChooseDevice;
