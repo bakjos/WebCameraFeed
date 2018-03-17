@@ -257,6 +257,25 @@
     deviceID = _device;
 }
 
+-(void)pause {
+    if(self.captureSession) {
+        [self stopCapture];
+        self.captureSession = nil;
+    }
+    if(captureOutput){
+        if(captureOutput.sampleBufferDelegate != nil) {
+            [captureOutput setSampleBufferDelegate:nil queue:NULL];
+        }
+        [captureOutput release];
+        captureOutput = nil;
+    }
+}
+
+-(void)resume {
+     [self initCapture:-1 capWidth:width capHeight:height capMirror: false];
+     [self startCapture];
+}
+
 -(int)switchBackAndFront {
     NSArray * devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     if ( [devices count] > deviceID) {
@@ -479,14 +498,14 @@ bool AVFoundationVideoGrabber::switchBackAndFront()  {
 void AVFoundationVideoGrabber::pause () {
      stopThread();
     if( grabber != nil ){
-        [grabber stopCapture];
+        [grabber pause];
     }
 }
 
 void AVFoundationVideoGrabber::resume () {
     startThread();
     if( grabber != nil ){
-        [grabber startCapture];
+        [grabber resume];
     }
 }
 

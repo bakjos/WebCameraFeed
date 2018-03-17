@@ -41,6 +41,8 @@ class AVFoundationVideoGrabber;
 -(void)setDevice:(int)_device;
 -(void)eraseGrabberPtr;
 -(int)switchBackAndFront;
+-(void)pause;
+-(void)resume;
 -(CGImageRef)getCurrentFrame;
 
 @end
