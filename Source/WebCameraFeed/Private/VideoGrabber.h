@@ -9,3 +9,8 @@
 	#include "AVFoundationVideoGrabber.h"
 	typedef AVFoundationVideoGrabber VideoGrabber;
 #endif 
+
+#if PLATFORM_IOS
+	#include "AVFoundationVideoGrabber.h"
+	typedef AVFoundationVideoGrabber VideoGrabber;
+#endif 

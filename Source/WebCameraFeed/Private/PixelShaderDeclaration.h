@@ -78,7 +78,8 @@ public:
     /** Should the shader be cached? Always. */
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
     {
-        return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM4) && !IsConsolePlatform(Parameters.Platform);
+        //return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM4) && !IsConsolePlatform(Parameters.Platform);
+        return true;
     }
 #endif
 
@@ -110,7 +111,8 @@ public:
     /** Should the shader be cached? Always. */
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
     {
-        return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM4) && !IsConsolePlatform(Parameters.Platform);
+        //return IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM4) && !IsConsolePlatform(Parameters.Platform);
+        return true;
     }
 #endif
 

@@ -4,6 +4,7 @@
 #include "ImageUtility.h"
 #include <UnrealEngine.h>
 #include <Classes/Engine/World.h>
+#include <SceneInterface.h>
 #include <Public/GlobalShader.h>
 #include <Public/PipelineStateCache.h>
 #include <Public/RHIStaticStates.h>
@@ -59,7 +60,7 @@ uint32 BaseVideoGrabber::Run() {
 }
 
 void BaseVideoGrabber::allocateData(int w, int h, EPixelFormat InFormat) {
-	
+	frwLock.WriteLock();
 	uint32 MemorySize = w*h * 4;
 	pixels.Reset();
 	pixels.AddUninitialized(MemorySize);
@@ -77,8 +78,48 @@ void BaseVideoGrabber::allocateData(int w, int h, EPixelFormat InFormat) {
 	if (mirrored) {
 		mirroredTexture = NewObject<UTextureRenderTarget2D>();
 		mirroredTexture->InitCustomFormat(w, h, PF_B8G8R8A8, false);
-	}    
+	}
+    
+    frwLock.WriteUnlock();
+}
 
+void BaseVideoGrabber::resizeData(int w, int h, EPixelFormat InFormat) {
+    
+    if ( !cameraTexture.IsValid()) {
+        allocateData(w, h, InFormat);
+    } else {
+        frwLock.WriteLock();
+        uint32 MemorySize = w*h * 4;
+        pixels.Reset();
+        pixels.AddUninitialized(MemorySize);
+        FMemory::Memzero(pixels.GetData(), MemorySize);
+        frwLock.WriteUnlock();
+        
+        cameraTexture->ReleaseResource();
+        
+        // Allocate first mipmap.
+        int32 NumBlocksX = w / GPixelFormats[InFormat].BlockSizeX;
+        int32 NumBlocksY = h / GPixelFormats[InFormat].BlockSizeY;
+        FTexture2DMipMap& Mip = cameraTexture->PlatformData->Mips[0];
+        Mip.SizeX = w;
+        Mip.SizeY = h;
+        Mip.BulkData.Lock(LOCK_READ_WRITE);
+        Mip.BulkData.Realloc(NumBlocksX * NumBlocksY * GPixelFormats[InFormat].BlockBytes);
+        Mip.BulkData.Unlock();
+        
+        cameraTexture->UpdateResource();
+        
+        	
+        
+        if (mirrored) {
+            if (!mirroredTexture.IsValid()) {
+                mirroredTexture = NewObject<UTextureRenderTarget2D>();
+            }
+            mirroredTexture->InitCustomFormat(w, h, PF_B8G8R8A8, false);
+        }
+        
+    }
+    
 }
 
 void  BaseVideoGrabber::mirrorTexture_RenderThread(FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState) {
@@ -88,11 +129,23 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRHICommandList& RHICmdList, 
 		RHICmdList.SetViewport(
 			0, 0, 0.f,
 			TextureRHIRef->GetSizeX(), TextureRHIRef->GetSizeY(), 1.f);
+        
+        ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
+        
+        UWorld * world = GEngine->GetWorld();
+        
+        if ( world != nullptr) {
+            if ( world->Scene != nullptr) {
+                FeatureLevel = world->Scene->GetFeatureLevel();
+            }
+        }
 
-		ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
+		
+        
+        TShaderMap<FGlobalShaderType>* ShaderMap = GetGlobalShaderMap(FeatureLevel);
 
-		TShaderMapRef<FWebCameraMirrorVS> VertexShader(GetGlobalShaderMap(FeatureLevel));
-		TShaderMapRef<FWebCameraMirrorPS> PixelShader(GetGlobalShaderMap(FeatureLevel));
+		TShaderMapRef<FWebCameraMirrorVS> VertexShader(ShaderMap);
+		TShaderMapRef<FWebCameraMirrorPS> PixelShader(ShaderMap);
 
 
 		FGraphicsPipelineStateInitializer GraphicsPSOInit;

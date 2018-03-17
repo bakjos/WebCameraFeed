@@ -1,8 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AVFoundationVideoGrabber.h"
+#include <Async.h>
 
-#if PLATFORM_MAC
+#if PLATFORM_MAC || PLATFORM_IOS
 
 #import <Accelerate/Accelerate.h>
 
@@ -273,13 +274,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
                 unsigned char *isrc4 = (unsigned char *)CVPixelBufferGetBaseAddress(imageBuffer);
                 size_t widthIn  = CVPixelBufferGetWidth(imageBuffer);
                 size_t heightIn    = CVPixelBufferGetHeight(imageBuffer);
-                
-                if( widthIn != grabberPtr->getWidth() || heightIn != grabberPtr->getHeight() ){
-                    UE_LOG(LogVideoGrabber, Error,  TEXT("incoming image dimensions %d by %d on't match. This shouldn't happen! Returning."), widthIn , heightIn);
-                    return;
-                }
                 grabberPtr->updatePixelsCB(isrc4, widthIn, heightIn);
             }
+            // Unlock the image buffer
+            CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
         }
     }
 }
@@ -369,9 +367,9 @@ bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
     
     if( [grabber initCapture:fps capWidth:w capHeight:h capMirror: mirrored] ) {
         //update the pixel dimensions based on what the camera supports
+        setVideoMirrored (mirrored);
         width = grabber->width;
         height = grabber->height;
-        setVideoMirrored (mirrored);
         allocateData(width, height, PF_B8G8R8A8);
         [grabber startCapture];
         startThread();
@@ -425,6 +423,22 @@ int AVFoundationVideoGrabber::getWidth() const {
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {
+    if ( w != width || h != height || !cameraTexture.IsValid()) {
+        UE_LOG(LogVideoGrabber, Warning,  TEXT("The incoming image dimensions %d by %d don't match with the current dimensions %d by %d"), w , h, width, height);
+      
+        FEvent* fSemaphore = FGenericPlatformProcess::GetSynchEventFromPool(false);
+        AsyncTask(ENamedThreads::GameThread, [this, w, h,fSemaphore]() {
+            this->resizeData(w,h, PF_B8G8R8A8);
+            fSemaphore->Trigger();
+        });
+        
+        fSemaphore->Wait();
+        FGenericPlatformProcess::ReturnSynchEventToPool(fSemaphore);
+        width = w;
+        height = h;
+        
+    }
+    
     frwLock.WriteLock();
     if ( pixels.Num() > 0 ){
         uint32 MemorySize = w*h*4;

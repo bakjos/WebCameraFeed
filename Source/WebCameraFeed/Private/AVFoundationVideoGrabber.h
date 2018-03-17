@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "BaseVideoGrabber.h"
-#if PLATFORM_MAC
+#if PLATFORM_MAC || PLATFORM_IOS
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>

@@ -55,6 +55,7 @@ public:
     
 protected:
 	void allocateData(int w, int h, EPixelFormat InFormat = PF_R8G8B8A8);
+    void resizeData(int w, int h, EPixelFormat InFormat = PF_R8G8B8A8);
 	void copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors);
 	void startThread();
 	void stopThread();
