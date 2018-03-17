@@ -477,15 +477,15 @@ bool AVFoundationVideoGrabber::switchBackAndFront()  {
 }
 
 void AVFoundationVideoGrabber::pause () {
-    if( grabber == nil ){
+     stopThread();
+    if( grabber != nil ){
         [grabber stopCapture];
-        stopThread();
     }
 }
 
 void AVFoundationVideoGrabber::resume () {
-    if( grabber == nil ){
-        startThread();
+    startThread();
+    if( grabber != nil ){
         [grabber startCapture];
     }
 }
