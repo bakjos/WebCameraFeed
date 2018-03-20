@@ -10,6 +10,8 @@
 #include "WebCameraDeviceIdCustomization.h"
 #endif
 
+
+
 void FWebCameraFeedModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
@@ -17,12 +19,15 @@ void FWebCameraFeedModule::StartupModule()
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WebCameraDeviceId",  FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWebCameraDeviceIdCustomization::MakeInstance));
 #endif
+
 }
 
 void FWebCameraFeedModule::ShutdownModule()
 {
 	VideoGrabberPool::ReleaseInstance();
 }
+
+
 
 #undef LOCTEXT_NAMESPACE
 	

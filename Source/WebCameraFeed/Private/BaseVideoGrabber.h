@@ -45,6 +45,14 @@ public:
 
 	virtual int getWidth() const = 0;
 
+	/// Get device id of back facing camera.
+	/// Returns -1 if no match is found
+	virtual int getBackCamera() const = 0;
+
+	/// Get device id of front facing (selfie) camera.
+	/// Returns -1 if no match is found
+	virtual int getFrontCamera()const = 0;
+
 	UTexture* getTexture();
     
     bool isVideoMirrored();

@@ -61,6 +61,12 @@ public:
     UFUNCTION(Category = "WebCamera", BlueprintCallable)
     bool SwitchFrontAndBackCamera();
 
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	int GetFrontCameraId();
+
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	int GetBackCameraId();
+
 #if WITH_EDITOR
     virtual const FText GetPaletteCategory() override;
 #endif

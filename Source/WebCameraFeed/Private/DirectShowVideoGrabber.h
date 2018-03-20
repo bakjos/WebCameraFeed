@@ -34,6 +34,10 @@ public:
 	int getWidth() const override;
     
     bool switchBackAndFront() override { return false; }
+
+	int getBackCamera() const override { return 0; }
+	
+	int getFrontCamera() const override { return 0; }
     
 
 protected:

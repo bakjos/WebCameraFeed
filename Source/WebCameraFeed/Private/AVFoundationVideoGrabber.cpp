@@ -306,6 +306,28 @@
     
 }
 
+-(int)getBackCamera {
+	NSArray * devices = [AVCaptureDevice devicesWithMediaType : AVMediaTypeVideo];
+	for (int i = 0; i < [devices count]; i++){
+		AVCaptureDevice * captureDevice = [devices objectAtIndex:i];
+		if ( [captureDevice position] == AVCaptureDevicePositionBack) {
+			return i;
+		}
+	}
+	return 0;
+}
+
+-(int)getFrontCamera {
+	NSArray * devices = [AVCaptureDevice devicesWithMediaType : AVMediaTypeVideo];
+	for (int i = 0; i < [devices count]; i++) {
+		AVCaptureDevice * captureDevice = [devices objectAtIndex : i];
+		if ([captureDevice position] == AVCaptureDevicePositionFront) {
+			return i;
+		}
+	}
+	return 0;
+}
+
 #pragma mark -
 #pragma mark AVCaptureSession delegate
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
@@ -432,10 +454,7 @@ bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
         return true;
     } else {
         return false;
-    }
-    
-   
-    
+    }   
 }
 
 TArray<FVideoDevice> AVFoundationVideoGrabber::listDevices() const {
@@ -492,6 +511,20 @@ bool AVFoundationVideoGrabber::switchBackAndFront()  {
     }
 #endif
     return false;
+}
+
+int  AVFoundationVideoGrabber::getBackCamera() const override {
+#if PLATFORM_IOS
+	return [grabber getBackCamera];
+#endif
+	return 0;
+}
+
+int  AVFoundationVideoGrabber::getFrontCamera() const override {
+#if PLATFORM_IOS
+	return [grabber getFrontCamera];
+#endif
+	return 0;
 }
 
 void AVFoundationVideoGrabber::pause () {

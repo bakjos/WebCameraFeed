@@ -36,6 +36,14 @@ public class WebCameraFeed : ModuleRules
 		{
 
 		}
+		else if (Target.Platform == UnrealTargetPlatform.Android)
+        {
+           
+            string finalPath =  Path.Combine(ModulePath, "AndroidCamera_APL.xml");
+            System.Console.WriteLine("... APL Path -> " + finalPath);
+            AdditionalPropertiesForReceipt.Add(new ReceiptProperty("AndroidPlugin", finalPath));
+        }
+
 	}
 
 	public WebCameraFeed(ReadOnlyTargetRules Target) : base(Target)

@@ -42,9 +42,12 @@ class AVFoundationVideoGrabber;
 -(void)setDevice:(int)_device;
 -(void)eraseGrabberPtr;
 -(int)switchBackAndFront;
+-(int)getBackCamera;
+-(int)getFrontCamera;
 -(void)pause;
 -(void)resume;
 -(CGImageRef)getCurrentFrame;
+
 
 @end
 
@@ -75,6 +78,10 @@ public:
 	int getWidth() const override;
     
     bool switchBackAndFront() override;
+
+	int getBackCamera() const override;
+
+	int getFrontCamera() const override;
     
 protected:
     
@@ -83,7 +90,6 @@ protected:
     
     bool newFrame = false;
     bool bHavePixelsChanged = false;
-    void clear();
     int width, height;
     
     int device = 0;

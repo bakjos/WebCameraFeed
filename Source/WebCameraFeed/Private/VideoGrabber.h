@@ -14,3 +14,8 @@
 	#include "AVFoundationVideoGrabber.h"
 	typedef AVFoundationVideoGrabber VideoGrabber;
 #endif 
+
+#if PLATFORM_ANDROID
+	#include "AndroidVideoGrabber.h"
+	typedef AndroidVideoGrabber VideoGrabber;
+#endif

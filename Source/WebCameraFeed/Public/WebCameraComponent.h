@@ -43,6 +43,12 @@ public:
 
 	UFUNCTION(Category = "WebCamera", BlueprintCallable)
 	void SetDeviceId(int id);
+
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	int GetFrontCameraId();
+
+	UFUNCTION(Category = "WebCamera", BlueprintCallable)
+	int GetBackCameraId();
     
     UFUNCTION(Category = "WebCamera", BlueprintCallable)
     bool SwitchFrontAndBackCamera();

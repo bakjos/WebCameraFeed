@@ -85,6 +85,21 @@ bool UWebCameraWidget::SwitchFrontAndBackCamera() {
     return false;
 }
 
+int UWebCameraWidget::GetFrontCameraId() {
+	if (currentVideoGrabber.IsValid()) {
+		return currentVideoGrabber->getFrontCamera();
+	}
+
+	return 0;
+}
+
+int UWebCameraWidget::GetBackCameraId() {
+	if (currentVideoGrabber.IsValid()) {
+		return currentVideoGrabber->getBackCamera();
+	}
+	return 0;
+}
+
 void  UWebCameraWidget::SetDeviceId(int id) {
 	if (currentVideoGrabber.IsValid()) {
 		if (currentVideoGrabber->getDeviceID() == id) {
