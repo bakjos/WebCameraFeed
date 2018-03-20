@@ -24,6 +24,7 @@ class AVFoundationVideoGrabber;
     
     BOOL bInitCalled;
     int deviceID;
+    bool paused;
     
     AVCaptureDeviceInput        *captureInput;
     AVCaptureVideoDataOutput    *captureOutput;

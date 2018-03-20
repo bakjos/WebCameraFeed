@@ -239,21 +239,25 @@ bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
 
 
 void BaseVideoGrabber::registerDelegates() {
-    FCoreDelegates::ApplicationWillDeactivateDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler);
-    FCoreDelegates::ApplicationHasReactivatedDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler);
+    FCoreDelegates::ApplicationWillEnterBackgroundDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler);
+    FCoreDelegates::ApplicationHasEnteredForegroundDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler);
 }
 
 void BaseVideoGrabber::unRegisterDelegates() {
-    FCoreDelegates::ApplicationWillDeactivateDelegate.RemoveAll(this);
-    FCoreDelegates::ApplicationHasReactivatedDelegate.RemoveAll(this);
+    FCoreDelegates::ApplicationWillEnterBackgroundDelegate.RemoveAll(this);
+    FCoreDelegates::ApplicationHasEnteredForegroundDelegate.RemoveAll(this);
 }
 
 void BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler() {
+    frwLock.WriteLock();
     pause();
+    frwLock.WriteUnlock();
 }
 
 void BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler() {
+    frwLock.WriteLock();
     resume();
+    frwLock.WriteUnlock();
 }
 
 

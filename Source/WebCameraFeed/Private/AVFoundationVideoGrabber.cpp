@@ -29,6 +29,7 @@
         width = 0;
         height = 0;
         currentFrame = 0;
+        paused = false;
     }
     return self;
 }
@@ -262,18 +263,14 @@
         [self stopCapture];
         self.captureSession = nil;
     }
-    if(captureOutput){
-        if(captureOutput.sampleBufferDelegate != nil) {
-            [captureOutput setSampleBufferDelegate:nil queue:NULL];
-        }
-        [captureOutput release];
-        captureOutput = nil;
-    }
+    captureInput = nil;
+    paused = true;
 }
 
 -(void)resume {
-     [self initCapture:-1 capWidth:width capHeight:height capMirror: false];
-     [self startCapture];
+    [self initCapture:-1 capWidth:width capHeight:height capMirror: false];
+    [self startCapture];
+    paused = false;
 }
 
 -(int)switchBackAndFront {
@@ -315,7 +312,7 @@
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection
 {
-    if(grabberPtr != NULL) {
+    if(grabberPtr != NULL && !paused) {
         @autoreleasepool {
             CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
             // Lock the image buffer
@@ -328,8 +325,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
                 size_t heightIn    = CVPixelBufferGetHeight(imageBuffer);
                 grabberPtr->updatePixelsCB(isrc4, widthIn, heightIn);
             }
+            if (captureOutput){
             // Unlock the image buffer
-            CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
+                CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
+            }
         }
     }
 }
@@ -462,9 +461,9 @@ void AVFoundationVideoGrabber::update() {
     
     if (bHavePixelsChanged == true){
         bHavePixelsChanged = false;
-        frwLock.ReadLock();
+        frwLock.WriteLock();
         copyDataToTexture(pixels.GetData(), width, height, 4);
-        frwLock.ReadUnlock();
+        frwLock.WriteUnlock();
         newFrame = true;
     }
 }
@@ -500,13 +499,15 @@ void AVFoundationVideoGrabber::pause () {
     if( grabber != nil ){
         [grabber pause];
     }
+    cameraTexture.Reset();
 }
 
 void AVFoundationVideoGrabber::resume () {
-    startThread();
     if( grabber != nil ){
         [grabber resume];
     }
+    
+     startThread();
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {
