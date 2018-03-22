@@ -40,4 +40,7 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
 
 	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActor_Tick.png?raw=true)
 
+	- For IOS is necessary to add the following line to the `Project Settings > IOS > Extra PList Data>Additional PList Data ` :
+        `<key>NSCameraUsageDescription</key><string>Camera is used for AR functionality</string>`
+
 	  A sample material and a sample blue print actor are inside the Content folder
