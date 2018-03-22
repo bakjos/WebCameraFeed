@@ -30,6 +30,8 @@ import android.graphics.PixelFormat;
 import java.util.List; 
 import java.io.IOException;
 import android.util.Log;
+import android.Manifest;
+import android.support.v4.app.ActivityCompat;
 		</insert>
 	</gameActivityImportAdditions>
 	
@@ -41,6 +43,27 @@ import android.util.Log;
         SurfaceTexture surfaceTexture;
         Camera camera;
         public native boolean nativeGetFrameData(int frameWidth, int frameHeight, byte[] data);
+
+        public  boolean isCameraPermissionGranted() {
+
+            if (Build.VERSION.SDK_INT &gt;= 23) {
+                if (checkSelfPermission(Manifest.permission.CAMERA)
+                        == PackageManager.PERMISSION_GRANTED) {
+                    android.util.Log.v("Permision","Camera Permission is granted");
+                    return true;
+                } else {
+                    android.util.Log.v("Permision","Camera Permission is revoked");
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
+                    return false;
+                }
+            }
+            else { 
+                //permission is automatically granted on sdk &lt; 23 upon installation
+                android.util.Log.v("Camera Permision","Permission is granted");
+                return true;
+            }
+        }
+
 
         public void AndroidThunkJava_Toast()
         {
@@ -71,6 +94,11 @@ import android.util.Log;
 
         public boolean AndroidThunkJava_startCamera(int w, int h, int _targetFps)
         {
+
+            if ( !isCameraPermissionGranted() ) {
+                return false;
+            }
+
             surfaceTexture = new SurfaceTexture(10);
             surfaceTexture.setDefaultBufferSize(w,h);
 
@@ -220,6 +248,7 @@ import android.util.Log;
 	<!-- optional additions to GameActivity onCreate in GameActivity.java -->
 	<gameActivityOnCreateAdditions>
 		<insert>
+        android.util.Log.i("AndroidCamera", "Called on create in GameActivity");
 		//Toast.makeText(this,msg,Toast.LENGTH_LONG).show();
 		//AndroidThunkJava_Toast();
 		</insert>
