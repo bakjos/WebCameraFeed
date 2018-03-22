@@ -1,7 +1,7 @@
 Web Camera plugin for unreal engine 
 ===================================
 
-A plugin that let's you use a web camera on Windows, using VideoInput library (direct show) and Mac, using the AVFoundation Library
+A plugin that let's you use a web camera on Windows, using VideoInput library (direct show), Mac and IOS, using the AVFoundation Library and Android using the Android Camera API through JNI
 
 
 ## Features:
@@ -35,5 +35,9 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
 	 - Put inside the creation script the dynamic material creation and assign the web camera texture to the TextureSamplerParameter2D parameter
 	  
 	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActor.png?raw=true)
+
+  	- When you're using the mobile version, is necessary to add inside the tick event of the actor the code to set the texture parameter again
+
+	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActor_Tick.png?raw=true)
 
 	  A sample material and a sample blue print actor are inside the Content folder
