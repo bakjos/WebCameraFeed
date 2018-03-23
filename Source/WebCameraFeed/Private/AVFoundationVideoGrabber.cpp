@@ -513,14 +513,14 @@ bool AVFoundationVideoGrabber::switchBackAndFront()  {
     return false;
 }
 
-int  AVFoundationVideoGrabber::getBackCamera() const override {
+int  AVFoundationVideoGrabber::getBackCamera() const {
 #if PLATFORM_IOS
 	return [grabber getBackCamera];
 #endif
 	return 0;
 }
 
-int  AVFoundationVideoGrabber::getFrontCamera() const override {
+int  AVFoundationVideoGrabber::getFrontCamera() const {
 #if PLATFORM_IOS
 	return [grabber getFrontCamera];
 #endif
