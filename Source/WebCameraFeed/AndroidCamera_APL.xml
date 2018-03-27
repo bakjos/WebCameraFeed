@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--ARToolKit plugin additions-->
+<!--Android Camera plugin additions-->
 <root xmlns:android="http://schemas.android.com/apk/res/android">
 	<!-- init section is always evaluated once per architecture -->
 	<init>
@@ -9,6 +9,7 @@
 	<androidManifestUpdates>
 		<addPermission android:name="android.permission.CAMERA"/>
 		<addFeature android:name="android.hardware.camera"/>
+		<addFeature android:name="android.hardware.camera.front" android:required="false"/>
 		<addFeature android:name="android.hardware.camera.autofocus"/>
 	</androidManifestUpdates>
 
@@ -32,215 +33,251 @@ import java.io.IOException;
 import android.util.Log;
 import android.Manifest;
 import android.support.v4.app.ActivityCompat;
+import android.support.annotation.NonNull;
 		</insert>
 	</gameActivityImportAdditions>
 	
 	<gameActivityClassAdditions>
 		<insert>
-			  int deviceID = -1;
-        int width, height, targetFps;
-        boolean initialized = false;
-        SurfaceTexture surfaceTexture;
-        Camera camera;
-        public native boolean nativeGetFrameData(int frameWidth, int frameHeight, byte[] data);
+  int deviceID = -1;
+	int textureID = 0;
+	int width, height, targetFps;
+	boolean initialized = false;
+	SurfaceTexture surfaceTexture;
 
-        public  boolean isCameraPermissionGranted() {
+	Camera camera;
+	boolean previewing = false;
 
-            if (Build.VERSION.SDK_INT &gt;= 23) {
-                if (checkSelfPermission(Manifest.permission.CAMERA)
-                        == PackageManager.PERMISSION_GRANTED) {
-                    android.util.Log.v("Permision","Camera Permission is granted");
-                    return true;
-                } else {
-                    android.util.Log.v("Permision","Camera Permission is revoked");
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
-                    return false;
-                }
-            }
-            else { 
-                //permission is automatically granted on sdk &lt; 23 upon installation
-                android.util.Log.v("Camera Permision","Permission is granted");
-                return true;
-            }
-        }
+	public native boolean nativeGetFrameData(int frameWidth, int frameHeight, byte[] data);
 
 
-        public void AndroidThunkJava_Toast()
-        {
-            try
-            {
-                _activity.runOnUiThread(new Runnable()
-                {
-                    public void run()
-                    {
-                        Toast.makeText(_activity.getApplicationContext(), "cam o yeah!", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                Log.debug("Toast failed with exception " + e.getMessage());
-            }
-        }
+	public boolean isCameraPermissionGranted() {
 
-        public void  AndroidThunkJava_setDeviceID(int _deviceId){
-            deviceID = _deviceId;
-
-            if(initialized){
-                AndroidThunkJava_stopCamera();
-                AndroidThunkJava_startCamera(width, height, targetFps);
-            }
-        }
-
-        public boolean AndroidThunkJava_startCamera(int w, int h, int _targetFps)
-        {
-
-            if ( !isCameraPermissionGranted() ) {
-                return false;
-            }
-
-            surfaceTexture = new SurfaceTexture(10);
-            surfaceTexture.setDefaultBufferSize(w,h);
-
-            if(deviceID==-1)
-                deviceID = AndroidThunkJava_getCameraFacing(0);
-
-            try {
-                if (Build.VERSION.SDK_INT &gt;= 9) {
-                    camera = Camera.open(deviceID);
-                } else {
-                    camera = Camera.open();
-                }
-            } catch (Exception e) {
-                android.util.Log.e("AndroidCamera","Error trying to open specific camera, trying default",e);
-                camera = Camera.open();
-            }
+		if (Build.VERSION.SDK_INT &gt;= 23) {
+			if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+					== PackageManager.PERMISSION_GRANTED) {
+				android.util.Log.v("Permision", "Camera Permission is granted");
+				return true;
+			} else {
+				android.util.Log.v("Permision", "Camera Permission is revoked");
+				ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 1);
+				return false;
+			}
+		} else {
+			//permission is automatically granted on sdk &lt; 23 upon installation
+			android.util.Log.v("Camera Permision", "Permission is granted");
+			return true;
+		}
+	}
 
 
-            try {
-                camera.setPreviewTexture(surfaceTexture);
-            } catch (IOException t) {
-                android.util.Log.e("ARToolKitLog", "Cannot set preview texture target!", t);
-            }
+	public void AndroidThunkJava_Toast() {
+		try {
+			_activity.runOnUiThread(new Runnable() {
+				public void run() {
+					Toast.makeText(_activity.getApplicationContext(), "cam o yeah!", Toast.LENGTH_SHORT).show();
+				}
+			});
+		} catch (Exception e) {
+			Log.debug("Toast failed with exception " + e.getMessage());
+		}
+	}
 
-            Parameters cameraParam = camera.getParameters();
+	public void AndroidThunkJava_setDeviceID(int _deviceId) {
+		deviceID = _deviceId;
 
-            android.util.Log.i("AndroidCamera","Grabber supported sizes");
-            for(Size s : cameraParam.getSupportedPreviewSizes()){
-                android.util.Log.i("AndroidCamera",s.width + " " + s.height);
-            }
+		if (initialized) {
+			AndroidThunkJava_stopCamera();
+			AndroidThunkJava_startCamera(width, height, targetFps, textureID);
+		}
+	}
 
-            android.util.Log.i("AndroidCamera","Grabber supported formats");
-            for(Integer i : cameraParam.getSupportedPreviewFormats()){
-                android.util.Log.i("AndroidCamera",i.toString());
-            }
+	public boolean AndroidThunkJava_startCamera(int w, int h, int _targetFps, int _texID) {
 
-            android.util.Log.i("AndroidCamera","Grabber supported fps");
-            for(Integer i : cameraParam.getSupportedPreviewFrameRates()){
-                android.util.Log.i("AndroidCamera",i.toString());
-            }
+		if (!isCameraPermissionGranted()) {
+			textureID = _texID;
+			width = w;
+			height = h;
+			targetFps = _targetFps;
+			return false;
+		}
 
-            android.util.Log.i("AndroidCamera", "Grabber default format: " + cameraParam.getPreviewFormat());
-            android.util.Log.i("AndroidCamera", "Grabber default preview size: " + cameraParam.getPreviewSize().width + "," + cameraParam.getPreviewSize().height);
+		textureID = _texID;
 
-            cameraParam.setPreviewFormat(ImageFormat.NV21);
-            cameraParam.setPictureSize(w, h);
-            cameraParam.setPreviewSize(w, h);
+		surfaceTexture = new SurfaceTexture(_texID);
+		surfaceTexture.setDefaultBufferSize(w, h);
 
-            try{
-                Method setRecordingHint = cameraParam.getClass().getMethod("setRecordingHint",boolean.class);
-                setRecordingHint.invoke(cameraParam, true);
-            }catch(Exception e){
-                android.util.Log.i("AndroidCamera","couldn't set recording hint");
-            }
+		if (deviceID == -1)
+			deviceID = AndroidThunkJava_getCameraFacing(0);
 
-            camera.setParameters(cameraParam);
+		try {
+			if (Build.VERSION.SDK_INT &gt;= 9) {
+				camera = Camera.open(deviceID);
+			} else {
+				camera = Camera.open();
+			}
+		} catch (Exception e) {
+			android.util.Log.e("AndroidCamera", "Error trying to open specific camera, trying default", e);
+			camera = Camera.open();
+		}
 
-            cameraParam = camera.getParameters();
-            width = cameraParam.getPreviewSize().width;
-            height = cameraParam.getPreviewSize().height;
-            if(width!=w || height!=h)   android.util.Log.w("AndroidCamera","camera size different than asked for, resizing (this can slow the app)");
 
-            targetFps = _targetFps;
+		Parameters cameraParam = camera.getParameters();
 
-            // If target fps is not defined, then take the maximum fps
-            if(targetFps == -1) {
-                for(Integer i : cameraParam.getSupportedPreviewFrameRates()){
-                    if(targetFps &lt; i) {
-                        targetFps = i;
-                    }
-                }
-            }
+		android.util.Log.i("AndroidCamera", "Grabber supported sizes");
+		for (Size s : cameraParam.getSupportedPreviewSizes()) {
+			android.util.Log.i("AndroidCamera", s.width + " " + s.height);
+		}
 
-            camera.setPreviewCallback(new PreviewCallback() {
-                @Override
-                public void onPreviewFrame(byte[] data, Camera camera) {
-                    int Height = camera.getParameters().getPreviewSize().height;
-                    int Width = camera.getParameters().getPreviewSize().width;
-                    nativeGetFrameData(Width, Height, data);
-                }
-            });
+		android.util.Log.i("AndroidCamera", "Grabber supported formats");
+		for (Integer i : cameraParam.getSupportedPreviewFormats()) {
+			android.util.Log.i("AndroidCamera", i.toString());
+		}
 
-            camera.startPreview();
+		android.util.Log.i("AndroidCamera", "Grabber supported fps");
+		for (Integer i : cameraParam.getSupportedPreviewFrameRates()) {
+			android.util.Log.i("AndroidCamera", i.toString());
+		}
 
-            initialized = true;
-            return true;
-        }
+		android.util.Log.i("AndroidCamera", "Grabber default format: " + cameraParam.getPreviewFormat());
+		android.util.Log.i("AndroidCamera", "Grabber default preview size: " + cameraParam.getPreviewSize().width + "," + cameraParam.getPreviewSize().height);
 
-        public void AndroidThunkJava_stopCamera()
-        {
-            if (camera != null)
-            {
-                camera.stopPreview();
-                camera.release();
-                camera = null;
-            }
-        }
+		cameraParam.setPreviewFormat(ImageFormat.NV21);
+		//cameraParam.setPictureSize(w, h);
+		cameraParam.setPreviewSize(w, h);
 
-        public int AndroidThunkJava_getCameraFacing(int facing){
-            if (Build.VERSION.SDK_INT &lt; 9) {
-                return 0;
-            }
+		try {
+			Method setRecordingHint = cameraParam.getClass().getMethod("setRecordingHint", boolean.class);
+			setRecordingHint.invoke(cameraParam, true);
+		} catch (Exception e) {
+			android.util.Log.i("AndroidCamera", "couldn't set recording hint");
+		}
 
-            int numCameras = Camera.getNumberOfCameras();
-            Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-            for(int i=0;i&lt;numCameras;i++){
-                Camera.getCameraInfo(i, cameraInfo);
-                int _facing = cameraInfo.facing;
-                if(_facing == facing){
-                    return i;
-                }
-            }
-            return -1;
-        }
+		camera.setParameters(cameraParam);
 
-        public int AndroidThunkJava_getNumCameras(){
-            if (Build.VERSION.SDK_INT &lt; 9) {
-                return 1;
-            }
+		cameraParam = camera.getParameters();
+		width = cameraParam.getPreviewSize().width;
+		height = cameraParam.getPreviewSize().height;
+		if (width != w || height != h)
+			android.util.Log.w("AndroidCamera", "camera size different than asked for, resizing (this can slow the app) (" + Integer.toString(width) + "," + Integer.toString(height) + "), (" + Integer.toString(w) + "," + Integer.toString(h) + ")");
 
-            return Camera.getNumberOfCameras();
-        }
+		targetFps = _targetFps;
 
-        public int AndroidThunkJava_getFacingOfCamera(int _deviceID){
-            if (android.os.Build.VERSION.SDK_INT &lt; 9) {
-                return 0;
-            }
+		// If target fps is not defined, then take the maximum fps
+		if (targetFps == -1) {
+			for (Integer i : cameraParam.getSupportedPreviewFrameRates()) {
+				if (targetFps &lt; i) {
+					targetFps = i;
+				}
+			}
+		}
 
-            if(_deviceID == -1) _deviceID = deviceID;
+		android.util.Log.i("AndroidCamera", "Started preview callback width size: " + Integer.toString(width) + "," + Integer.toString(height));
 
-            Camera.CameraInfo info = new Camera.CameraInfo();
-            Camera.getCameraInfo(_deviceID, info);
-            return info.facing;
-        }
-      
-        public int AndroidThunkJava_getWidth() {
-            return width;
-        }
-      
-        public int AndroidThunkJava_getHeight() {
-            return height;
-        }
+		camera.setPreviewCallback(new PreviewCallback() {
+			@Override
+			public void onPreviewFrame(byte[] data, Camera camera) {
+				if (camera != null) {
+					try {
+						int Height = camera.getParameters().getPreviewSize().height;
+						int Width = camera.getParameters().getPreviewSize().width;
+						nativeGetFrameData(Width, Height, data);
+					} catch (Exception ex) {
+
+					}
+				}
+			}
+		});
+
+		if (surfaceTexture != null) {
+			try {
+				camera.setPreviewTexture(surfaceTexture);
+			} catch (IOException t) {
+				android.util.Log.e("AndroidCamera", "Cannot set preview texture target!", t);
+			}
+			previewing = true;
+			camera.startPreview();
+		}
+
+		initialized = true;
+		return true;
+	}
+
+	public void AndroidThunkJava_stopCamera() {
+		if (camera != null) {
+			camera.setPreviewCallback(null);
+			camera.stopPreview();
+			try {
+				camera.setPreviewTexture(null);
+			} catch (Exception ex) {
+			}
+
+			surfaceTexture.release();
+			surfaceTexture = null;
+
+			camera.release();
+			camera = null;
+		}
+		initialized = false;
+	}
+
+	public int AndroidThunkJava_getCameraFacing(int facing) {
+		if (Build.VERSION.SDK_INT &lt; 9) {
+			return 0;
+		}
+
+		int numCameras = Camera.getNumberOfCameras();
+		Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+		for (int i = 0; i &lt; numCameras; i++) {
+			Camera.getCameraInfo(i, cameraInfo);
+			int _facing = cameraInfo.facing;
+			if (_facing == facing) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	public int AndroidThunkJava_getNumCameras() {
+		if (Build.VERSION.SDK_INT &lt; 9) {
+			return 1;
+		}
+
+		return Camera.getNumberOfCameras();
+	}
+
+	public int AndroidThunkJava_getFacingOfCamera(int _deviceID) {
+		if (android.os.Build.VERSION.SDK_INT &lt; 9) {
+			return 0;
+		}
+
+		if (_deviceID == -1) _deviceID = deviceID;
+
+		Camera.CameraInfo info = new Camera.CameraInfo();
+		Camera.getCameraInfo(_deviceID, info);
+		return info.facing;
+	}
+
+	public int AndroidThunkJava_getWidth() {
+		return width;
+	}
+
+	public int AndroidThunkJava_getHeight() {
+		return height;
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		for (int i = 0; i &lt; permissions.length; i++) {
+			String p = permissions[i];
+			if (p.equals(Manifest.permission.CAMERA)) {
+				AndroidThunkJava_stopCamera();
+				AndroidThunkJava_startCamera(width, height, targetFps, textureID);
+				break;
+			}
+		}
+	}
 
 		</insert>
 	</gameActivityClassAdditions>
@@ -248,9 +285,6 @@ import android.support.v4.app.ActivityCompat;
 	<!-- optional additions to GameActivity onCreate in GameActivity.java -->
 	<gameActivityOnCreateAdditions>
 		<insert>
-        android.util.Log.i("AndroidCamera", "Called on create in GameActivity");
-		//Toast.makeText(this,msg,Toast.LENGTH_LONG).show();
-		//AndroidThunkJava_Toast();
 		</insert>
 	</gameActivityOnCreateAdditions>
 

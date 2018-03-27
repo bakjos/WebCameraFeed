@@ -37,6 +37,9 @@ public:
 	void updatePixelsCB(unsigned char *isrc, int w, int h );
     
 protected:
+
+	void loadTexture();
+	void deleteTexture();
     
     void pause() override;
     void resume() override;
@@ -47,6 +50,8 @@ protected:
     int device = 0;
     bool bIsInit = false;
     int fps  = -1;
+
+	int textureID;
     
 
 private:

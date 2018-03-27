@@ -5,9 +5,13 @@
 #include <Runtime/Launch/Public/Android/AndroidJNI.h>
 #include <android/log.h>
 
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
+
 #define LOG_TAG "CameraLOG"
 
-bool AndroidThunkCpp_startCamera(int w, int h, int fps);
+bool AndroidThunkCpp_startCamera(int w, int h, int fps, int texId);
 void AndroidThunkCpp_stopCamera();
 
 int SetupJNICamera(JNIEnv* env);
@@ -133,6 +137,7 @@ AndroidVideoGrabber::AndroidVideoGrabber() {
 	bIsInit = false;
 	newFrame = false;
 	bHavePixelsChanged = false;
+	textureID = 0;
 }
 
 AndroidVideoGrabber:: ~AndroidVideoGrabber() {
@@ -153,7 +158,37 @@ TArray<FVideoDevice> AndroidVideoGrabber::listDevices() const {
 	return devices;
 }
 
+void AndroidVideoGrabber::loadTexture() {
+	
+	GLuint TextureID = 0;
+	glGenTextures(1, &TextureID);
+
+	glEnable(GL_TEXTURE_EXTERNAL_OES);
+	glBindTexture(GL_TEXTURE_EXTERNAL_OES, TextureID);
+
+	glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+
+	glDisable(GL_TEXTURE_EXTERNAL_OES);
+
+	textureID = TextureID;
+	
+}
+
+void AndroidVideoGrabber::deleteTexture () {
+	if ( textureID != 0) {
+		GLuint TextureID = TextureID;
+		glDeleteTextures(1, &TextureID);
+		textureID = 0;
+	}
+}
+
 void AndroidVideoGrabber::setDeviceID(int deviceID) {
+
+	this->deviceID = deviceID;
 
 	if (!AndroidThunkJava_setDeviceID || !ENV) return;
 	FJavaWrapper::CallVoidMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_setDeviceID, deviceID);
@@ -172,7 +207,10 @@ int AndroidVideoGrabber::getWidth() const {
 }
 
 bool  AndroidVideoGrabber::setup(int w, int h, bool mirrored) {
-	if ( AndroidThunkCpp_startCamera(w, h, -1) ) {
+	__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "Called setup");
+	loadTexture();
+
+	if ( AndroidThunkCpp_startCamera(w, h, -1, textureID) ) {
 		setVideoMirrored(mirrored);
 		width = w;
 		height = h;
@@ -187,20 +225,26 @@ bool  AndroidVideoGrabber::setup(int w, int h, bool mirrored) {
 }
 
 void  AndroidVideoGrabber::close() {
+	currentGrabber = NULL;
 	AndroidThunkCpp_stopCamera();
+	deleteTexture();
 	unRegisterDelegates();
 	stopThread();
+	currentGrabber = NULL;
 	bIsInit = false;
 	width = 0;
 	height = 0;
 	fps = -1;
 	newFrame = false;
 	bHavePixelsChanged = false;
-	currentGrabber = NULL;
 }
 
 void  AndroidVideoGrabber::update() {
 	newFrame = false;
+
+	if ( currentGrabber == NULL) {
+		currentGrabber = this;
+	}
 
 	if (bHavePixelsChanged == true) {
 		bHavePixelsChanged = false;
@@ -229,9 +273,7 @@ void AndroidVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h) {
 	}
 	frwLock.WriteLock();
 	if (pixels.Num() > 0) {
-		/*uint32 MemorySize = w*h * 4;
-		FMemory::Memcpy(pixels.GetData(), isrc, MemorySize);*/
-
+	
 		ConvertYUV2RGBA(isrc, // y component
 			isrc + (w * h),  // uv components
 			pixels.GetData(), w, h);
@@ -248,7 +290,7 @@ int SetupJNICamera(JNIEnv* env)
 
 	ENV = env;
 
-	AndroidThunkJava_startCamera = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_startCamera", "(III)Z", false);
+	AndroidThunkJava_startCamera = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_startCamera", "(IIII)Z", false);
 	if (!AndroidThunkJava_startCamera)
 	{
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_startCamera Method cant be found T_T ");
@@ -297,22 +339,33 @@ int SetupJNICamera(JNIEnv* env)
 		return JNI_ERR;
 	}
 
-	
-	
-
 	return JNI_OK;
 }
 
 bool  AndroidVideoGrabber::switchBackAndFront() {
-	return false;
+	if ( getFacingOfCamera(deviceID) == 0) {
+		//Back to front
+		deviceID = getFrontCamera();
+		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "Switching to front camera");
+	} else {
+		deviceID = getBackCamera();
+		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "Switching to backCamera camera");
+	}
+
+	setDeviceID(deviceID);
+	pause();
+	loadTexture();
+	return AndroidThunkCpp_startCamera(width, height, -1, textureID);
 }
 
 void AndroidVideoGrabber::pause() {
+	deleteTexture();
 	AndroidThunkCpp_stopCamera();
 }
 
 void  AndroidVideoGrabber::resume() {
-	AndroidThunkCpp_startCamera(width, height, -1);
+	loadTexture();
+	AndroidThunkCpp_startCamera(width, height, -1, textureID);
 }
 
 int  AndroidVideoGrabber::getNumCameras() const {
@@ -326,7 +379,9 @@ int  AndroidVideoGrabber::getBackCamera() const {
 }
 
 int  AndroidVideoGrabber::getFrontCamera() const {
-	return getCameraFacing(1);
+	int id = getCameraFacing(1);
+	__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "Returned camera ID for front camera: %d", id);
+	return id;
 }
 
 
@@ -341,12 +396,12 @@ int AndroidVideoGrabber::getFacingOfCamera(int device) const {
 	return FJavaWrapper::CallIntMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_getFacingOfCamera, device);
 }
 
-bool  AndroidThunkCpp_startCamera(int w, int h, int fps)
+bool  AndroidThunkCpp_startCamera(int w, int h, int fps, int texID)
 {
 	if (!AndroidThunkJava_startCamera || !ENV) return false;
-	bool v = FJavaWrapper::CallBooleanMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_startCamera, w, h, fps);
-	__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "start camera");
-	return v;
+	bool v = FJavaWrapper::CallBooleanMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_startCamera, w, h, fps, texID);
+	__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "start camera %d ", (int)v);
+	return true;
 }
 
 
