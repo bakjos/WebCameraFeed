@@ -52,6 +52,9 @@ protected:
     int fps  = -1;
 
 	int textureID;
+
+	TArray<uint8>	copyPixels;
+	bool  _mirror;
     
 
 private:

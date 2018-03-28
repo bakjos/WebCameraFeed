@@ -544,8 +544,13 @@ void AVFoundationVideoGrabber::resume () {
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {
-    if ( w != width || h != height || !cameraTexture.IsValid()) {
-        UE_LOG(LogVideoGrabber, Warning,  TEXT("The incoming image dimensions %d by %d don't match with the current dimensions %d by %d"), w , h, width, height);
+	if (w != width || h != height) {
+		if (!cameraTexture.IsValid()) {
+			UE_LOG(LogVideoGrabber, Warning, TEXT("The texture is invalid, reallocating"));
+		}
+		else {
+			UE_LOG(LogVideoGrabber, Warning, TEXT("The incoming image dimensions %d by %d don't match with the current dimensions %d by %d"), w, h, width, height);
+		}
       
         FEvent* fSemaphore = FGenericPlatformProcess::GetSynchEventFromPool(false);
         AsyncTask(ENamedThreads::GameThread, [this, w, h,fSemaphore]() {

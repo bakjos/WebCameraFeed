@@ -63,7 +63,7 @@ void InitConvertTable()
 }
 
 void ConvertYUV2RGBA(unsigned char *src0, unsigned char *src1, unsigned char *dst_ori,
-	int width, int height)
+	int width, int height, bool mirror)
 {
 	register int y1, y2, u, v;
 	register unsigned char *py1, *py2;
@@ -73,8 +73,13 @@ void ConvertYUV2RGBA(unsigned char *src0, unsigned char *src1, unsigned char *ds
 	int width4 = 4 * width;
 	py1 = src0;
 	py2 = py1 + width;
-	d1 = dst_ori;
-	d2 = d1 + width4;
+	if ( mirror ) {
+		d1 = dst_ori + width4 - 1;
+		d2 = d1 + width4;
+	} else {
+		d1 = dst_ori;
+		d2 = d1 + width4;
+	}
 	for (j = 0; j < height; j += 2) {
 		for (i = 0; i < width; i += 2) {
 
@@ -86,36 +91,71 @@ void ConvertYUV2RGBA(unsigned char *src0, unsigned char *src1, unsigned char *ds
 			c3 = cgv_tab[v];
 			c4 = cbu_tab[u];
 
-			//up-left
-			y1 = tab_76309[*py1++];
-			*d1++ = clp[384 + ((y1 + c1) >> 16)];
-			*d1++ = clp[384 + ((y1 - c2 - c3) >> 16)];
-			*d1++ = clp[384 + ((y1 + c4) >> 16)];
-			*d1++ = 255;
+			if ( mirror ) { 
+				//up-left
+				y1 = tab_76309[*py1++];
+				*d1-- = 255;
+				*d1-- = clp[384 + ((y1 + c4) >> 16)];
+				*d1-- = clp[384 + ((y1 - c2 - c3) >> 16)];
+				*d1-- = clp[384 + ((y1 + c1) >> 16)];
+				
+				//down-left
+				y2 = tab_76309[*py2++];
+				*d2-- = 255;
+				*d2-- = clp[384 + ((y2 + c4) >> 16)];
+				*d2-- = clp[384 + ((y2 - c2 - c3) >> 16)];
+				*d2-- = clp[384 + ((y2 + c1) >> 16)];
 
-			//down-left
-			y2 = tab_76309[*py2++];
-			*d2++ = clp[384 + ((y2 + c1) >> 16)];
-			*d2++ = clp[384 + ((y2 - c2 - c3) >> 16)];
-			*d2++ = clp[384 + ((y2 + c4) >> 16)];
-			*d2++ = 255;
+				//up-right
+				y1 = tab_76309[*py1++];
+				*d1-- = 255;
+				*d1-- = clp[384 + ((y1 + c4) >> 16)];
+				*d1-- = clp[384 + ((y1 - c2 - c3) >> 16)];
+				*d1-- = clp[384 + ((y1 + c1) >> 16)];
+		
+				//down-right
+				y2 = tab_76309[*py2++];
+				*d2-- = 255;
+				*d2-- = clp[384 + ((y2 + c4) >> 16)];
+				*d2-- = clp[384 + ((y2 - c2 - c3) >> 16)];
+				*d2-- = clp[384 + ((y2 + c1) >> 16)];
+			} else {
+				//up-left
+				y1 = tab_76309[*py1++];
+				*d1++ = clp[384 + ((y1 + c1) >> 16)];
+				*d1++ = clp[384 + ((y1 - c2 - c3) >> 16)];
+				*d1++ = clp[384 + ((y1 + c4) >> 16)];
+				*d1++ = 255;
 
-			//up-right
-			y1 = tab_76309[*py1++];
-			*d1++ = clp[384 + ((y1 + c1) >> 16)];
-			*d1++ = clp[384 + ((y1 - c2 - c3) >> 16)];
-			*d1++ = clp[384 + ((y1 + c4) >> 16)];
-			*d1++ = 255;
+				//down-left
+				y2 = tab_76309[*py2++];
+				*d2++ = clp[384 + ((y2 + c1) >> 16)];
+				*d2++ = clp[384 + ((y2 - c2 - c3) >> 16)];
+				*d2++ = clp[384 + ((y2 + c4) >> 16)];
+				*d2++ = 255;
 
-			//down-right
-			y2 = tab_76309[*py2++];
-			*d2++ = clp[384 + ((y2 + c1) >> 16)];
-			*d2++ = clp[384 + ((y2 - c2 - c3) >> 16)];
-			*d2++ = clp[384 + ((y2 + c4) >> 16)];
-			*d2++ = 255;
+				//up-right
+				y1 = tab_76309[*py1++];
+				*d1++ = clp[384 + ((y1 + c1) >> 16)];
+				*d1++ = clp[384 + ((y1 - c2 - c3) >> 16)];
+				*d1++ = clp[384 + ((y1 + c4) >> 16)];
+				*d1++ = 255;
+
+				//down-right
+				y2 = tab_76309[*py2++];
+				*d2++ = clp[384 + ((y2 + c1) >> 16)];
+				*d2++ = clp[384 + ((y2 - c2 - c3) >> 16)];
+				*d2++ = clp[384 + ((y2 + c4) >> 16)];
+				*d2++ = 255;
+			}
 		}
-		d1 += width4;
-		d2 += width4;
+		if ( mirror) {
+			d1 = dst_ori + (j+1)*width4 - 1;
+			d2 = d1 + width4;
+		} else {
+			d1 += width4;
+			d2 += width4;
+		}
 		py1 += width;
 		py2 += width;
 	}
@@ -138,6 +178,7 @@ AndroidVideoGrabber::AndroidVideoGrabber() {
 	newFrame = false;
 	bHavePixelsChanged = false;
 	textureID = 0;
+	_mirror = false;
 }
 
 AndroidVideoGrabber:: ~AndroidVideoGrabber() {
@@ -211,7 +252,8 @@ bool  AndroidVideoGrabber::setup(int w, int h, bool mirrored) {
 	loadTexture();
 
 	if ( AndroidThunkCpp_startCamera(w, h, -1, textureID) ) {
-		setVideoMirrored(mirrored);
+		setVideoMirrored(false);
+		_mirror = mirrored;
 		width = w;
 		height = h;
 		allocateData(width, height, PF_B8G8R8A8);
@@ -226,11 +268,10 @@ bool  AndroidVideoGrabber::setup(int w, int h, bool mirrored) {
 
 void  AndroidVideoGrabber::close() {
 	currentGrabber = NULL;
+	stopThread();
 	AndroidThunkCpp_stopCamera();
 	deleteTexture();
 	unRegisterDelegates();
-	stopThread();
-	currentGrabber = NULL;
 	bIsInit = false;
 	width = 0;
 	height = 0;
@@ -240,6 +281,9 @@ void  AndroidVideoGrabber::close() {
 }
 
 void  AndroidVideoGrabber::update() {
+
+	if ( !bIsInit) return;
+
 	newFrame = false;
 
 	if ( currentGrabber == NULL) {
@@ -249,19 +293,46 @@ void  AndroidVideoGrabber::update() {
 	if (bHavePixelsChanged == true) {
 		bHavePixelsChanged = false;
 		frwLock.WriteLock();
-		copyDataToTexture(pixels.GetData(), width, height, 4);
+		//copyDataToTexture(pixels.GetData(), width, height, 4);
+
+		if (cameraTexture.IsValid()) {
+			FUpdateTextureRegion2D region(0, 0, 0, 0, width, height);
+			cameraTexture->UpdateTextureRegions(0, 1, &region, width*4, 4, pixels.GetData());
+		}
 		frwLock.WriteUnlock();
-		newFrame = true;
+		newFrame = true;	
 	}
+
+	
+
+	/*ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
+		UpdateThread,
+		JNIEnv*, ENV, ENV, jmethodID, AndroidThunkJava_update, AndroidThunkJava_update,
+		{
+			if (AndroidThunkJava_update && ENV) {
+				FJavaWrapper::CallVoidMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_update);
+			}
+			
+		});*/
 } 
 
 void AndroidVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h) {
-	if (w != width || h != height || !cameraTexture.IsValid()) {
-		UE_LOG(LogVideoGrabber, Warning, TEXT("The incoming image dimensions %d by %d don't match with the current dimensions %d by %d"), w, h, width, height);
+	if (!bIsInit) return;
+
+	if (w != width || h != height) {
+		if (!cameraTexture.IsValid()) {
+			UE_LOG(LogVideoGrabber, Warning, TEXT("The texture is invalid, reallocating"));
+			__android_log_print(ANDROID_LOG_WARN, LOG_TAG, "The texture is invalid, reallocating");
+		}
+		else {
+			UE_LOG(LogVideoGrabber, Warning, TEXT("The incoming image dimensions %d by %d don't match with the current dimensions %d by %d"), w, h, width, height);
+			__android_log_print(ANDROID_LOG_WARN, LOG_TAG, "The incoming image dimensions %d by %d don't match with the current dimensions %d by %d", w, h, width, height );
+		}
 
 		FEvent* fSemaphore = FGenericPlatformProcess::GetSynchEventFromPool(false);
 		AsyncTask(ENamedThreads::GameThread, [this, w, h, fSemaphore]() {
 			this->resizeData(w, h, PF_B8G8R8A8);
+			__android_log_print(ANDROID_LOG_INFO, LOG_TAG, "Resized data");
 			fSemaphore->Trigger();
 		});
 
@@ -271,16 +342,27 @@ void AndroidVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h) {
 		height = h;
 
 	}
-	frwLock.WriteLock();
+	frwLock.ReadLock();
 	if (pixels.Num() > 0) {
+		
+		if ( copyPixels.Num() != pixels.Num()) {
+			copyPixels.Reset(pixels.Num());
+		}
+		frwLock.ReadUnlock();
 	
 		ConvertYUV2RGBA(isrc, // y component
 			isrc + (w * h),  // uv components
-			pixels.GetData(), w, h);
+			copyPixels.GetData(), w, h, _mirror);
 
+		frwLock.WriteLock();
+		uint32 MemorySize = w*h*4;
+		FMemory::Memcpy(pixels.GetData(), copyPixels.GetData(), MemorySize);
 		bHavePixelsChanged = true;
+		frwLock.WriteUnlock();
+	} else {
+		frwLock.ReadUnlock();
 	}
-	frwLock.WriteUnlock();
+	
 }
 
 
@@ -291,15 +373,13 @@ int SetupJNICamera(JNIEnv* env)
 	ENV = env;
 
 	AndroidThunkJava_startCamera = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_startCamera", "(IIII)Z", false);
-	if (!AndroidThunkJava_startCamera)
-	{
+	if (!AndroidThunkJava_startCamera) {
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_startCamera Method cant be found T_T ");
 		return JNI_ERR;
 	}
 
 	AndroidThunkJava_stopCamera = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_stopCamera", "()V", false);
-	if (!AndroidThunkJava_stopCamera)
-	{
+	if (!AndroidThunkJava_stopCamera) {
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_stopCamera Method cant be found T_T ");
 		return JNI_ERR;
 	}
@@ -309,35 +389,32 @@ int SetupJNICamera(JNIEnv* env)
 
 	AndroidThunkJava_getNumCameras = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_getNumCameras", "()I", false);
 
-	if (!AndroidThunkJava_getNumCameras)
-	{
+	if (!AndroidThunkJava_getNumCameras) {
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_getNumCameras Method cant be found T_T ");
 		return JNI_ERR;
 	}
 
 	AndroidThunkJava_getCameraFacing = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_getCameraFacing", "(I)I", false);
 
-	if (!AndroidThunkJava_getCameraFacing)
-	{
+	if (!AndroidThunkJava_getCameraFacing) {
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_getCameraFacing Method cant be found T_T ");
 		return JNI_ERR;
 	}
 
 	AndroidThunkJava_getFacingOfCamera = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_getFacingOfCamera", "(I)I", false);
 
-	if (!AndroidThunkJava_getFacingOfCamera)
-	{
+	if (!AndroidThunkJava_getFacingOfCamera) {
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_getFacingOfCamera Method cant be found T_T ");
 		return JNI_ERR;
 	}
 
 	AndroidThunkJava_setDeviceID = FJavaWrapper::FindMethod(ENV, FJavaWrapper::GameActivityClassID, "AndroidThunkJava_setDeviceID", "(I)V", false);
 
-	if (!AndroidThunkJava_setDeviceID)
-	{
+	if (!AndroidThunkJava_setDeviceID) {
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "ERROR: AndroidThunkJava_setDeviceID Method cant be found T_T ");
 		return JNI_ERR;
 	}
+
 
 	return JNI_OK;
 }
@@ -351,21 +428,26 @@ bool  AndroidVideoGrabber::switchBackAndFront() {
 		deviceID = getBackCamera();
 		__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "Switching to backCamera camera");
 	}
-
+	AndroidThunkCpp_stopCamera();
 	setDeviceID(deviceID);
-	pause();
-	loadTexture();
 	return AndroidThunkCpp_startCamera(width, height, -1, textureID);
 }
 
 void AndroidVideoGrabber::pause() {
-	deleteTexture();
+	bIsInit = false;
+	currentGrabber = NULL;
+	stopThread();
 	AndroidThunkCpp_stopCamera();
+	deleteTexture();
+	cameraTexture.Reset();
 }
 
 void  AndroidVideoGrabber::resume() {
 	loadTexture();
 	AndroidThunkCpp_startCamera(width, height, -1, textureID);
+	startThread();
+	currentGrabber = this;
+	bIsInit = true;
 }
 
 int  AndroidVideoGrabber::getNumCameras() const {
@@ -412,13 +494,12 @@ void AndroidThunkCpp_stopCamera()
 	__android_log_print(ANDROID_LOG_VERBOSE, LOG_TAG, "shutdown camera");
 }
 
-extern "C" bool Java_com_epicgames_ue4_GameActivity_nativeGetFrameData(JNIEnv* LocalJNIEnv, jobject LocalThiz, jint frameWidth, jint frameHeight, jbyteArray data)
-{
-	//get the new frame
-	int length = LocalJNIEnv->GetArrayLength(data);
-	
+extern "C" bool Java_com_epicgames_ue4_GameActivity_nativeGetFrameData(JNIEnv* LocalJNIEnv, jobject LocalThiz, jint frameWidth, jint frameHeight, jbyteArray data) {
 	if ( currentGrabber != NULL) {
+		//get the new frame
+		int length = LocalJNIEnv->GetArrayLength(data);
 		jboolean isCopy;
+
 		auto currentFrame = (unsigned char *)LocalJNIEnv->GetByteArrayElements(data, &isCopy);
 		if (currentFrame) {
 			currentGrabber->updatePixelsCB(currentFrame, frameWidth, frameHeight);

@@ -39,6 +39,7 @@ import android.support.annotation.NonNull;
 	
 	<gameActivityClassAdditions>
 		<insert>
+  Object cameraLock = new Object();
   int deviceID = -1;
 	int textureID = 0;
 	int width, height, targetFps;
@@ -85,15 +86,10 @@ import android.support.annotation.NonNull;
 
 	public void AndroidThunkJava_setDeviceID(int _deviceId) {
 		deviceID = _deviceId;
-
-		if (initialized) {
-			AndroidThunkJava_stopCamera();
-			AndroidThunkJava_startCamera(width, height, targetFps, textureID);
-		}
 	}
 
 	public boolean AndroidThunkJava_startCamera(int w, int h, int _targetFps, int _texID) {
-
+    
 		if (!isCameraPermissionGranted()) {
 			textureID = _texID;
 			width = w;
@@ -104,121 +100,128 @@ import android.support.annotation.NonNull;
 
 		textureID = _texID;
 
-		surfaceTexture = new SurfaceTexture(_texID);
-		surfaceTexture.setDefaultBufferSize(w, h);
+		synchronized(cameraLock) {
+		  surfaceTexture = new SurfaceTexture(_texID);
+		  surfaceTexture.setDefaultBufferSize(w, h);
 
-		if (deviceID == -1)
-			deviceID = AndroidThunkJava_getCameraFacing(0);
+		  if (deviceID == -1)
+			  deviceID = AndroidThunkJava_getCameraFacing(0);
 
-		try {
-			if (Build.VERSION.SDK_INT &gt;= 9) {
-				camera = Camera.open(deviceID);
-			} else {
-				camera = Camera.open();
-			}
-		} catch (Exception e) {
-			android.util.Log.e("AndroidCamera", "Error trying to open specific camera, trying default", e);
-			camera = Camera.open();
-		}
+		  try {
+			  if (Build.VERSION.SDK_INT &gt;= 9) {
+				  camera = Camera.open(deviceID);
+			  } else {
+				  camera = Camera.open();
+			  }
+		  } catch (Exception e) {
+			  android.util.Log.e("AndroidCamera", "Error trying to open specific camera, trying default", e);
+			  camera = Camera.open();
+		  }
 
 
-		Parameters cameraParam = camera.getParameters();
+		  Parameters cameraParam = camera.getParameters();
 
-		android.util.Log.i("AndroidCamera", "Grabber supported sizes");
-		for (Size s : cameraParam.getSupportedPreviewSizes()) {
-			android.util.Log.i("AndroidCamera", s.width + " " + s.height);
-		}
+		  android.util.Log.i("AndroidCamera", "Grabber supported sizes");
+		  for (Size s : cameraParam.getSupportedPreviewSizes()) {
+			  android.util.Log.i("AndroidCamera", s.width + " " + s.height);
+		  }
 
-		android.util.Log.i("AndroidCamera", "Grabber supported formats");
-		for (Integer i : cameraParam.getSupportedPreviewFormats()) {
-			android.util.Log.i("AndroidCamera", i.toString());
-		}
+		  android.util.Log.i("AndroidCamera", "Grabber supported formats");
+		  for (Integer i : cameraParam.getSupportedPreviewFormats()) {
+			  android.util.Log.i("AndroidCamera", i.toString());
+		  }
 
-		android.util.Log.i("AndroidCamera", "Grabber supported fps");
-		for (Integer i : cameraParam.getSupportedPreviewFrameRates()) {
-			android.util.Log.i("AndroidCamera", i.toString());
-		}
+		  android.util.Log.i("AndroidCamera", "Grabber supported fps");
+		  for (Integer i : cameraParam.getSupportedPreviewFrameRates()) {
+			  android.util.Log.i("AndroidCamera", i.toString());
+		  }
 
-		android.util.Log.i("AndroidCamera", "Grabber default format: " + cameraParam.getPreviewFormat());
-		android.util.Log.i("AndroidCamera", "Grabber default preview size: " + cameraParam.getPreviewSize().width + "," + cameraParam.getPreviewSize().height);
+		  android.util.Log.i("AndroidCamera", "Grabber default format: " + cameraParam.getPreviewFormat());
+		  android.util.Log.i("AndroidCamera", "Grabber default preview size: " + cameraParam.getPreviewSize().width + "," + cameraParam.getPreviewSize().height);
 
-		cameraParam.setPreviewFormat(ImageFormat.NV21);
-		//cameraParam.setPictureSize(w, h);
-		cameraParam.setPreviewSize(w, h);
+		  cameraParam.setPreviewFormat(ImageFormat.NV21);
+		  //cameraParam.setPictureSize(w, h);
+		  cameraParam.setPreviewSize(w, h);
 
-		try {
-			Method setRecordingHint = cameraParam.getClass().getMethod("setRecordingHint", boolean.class);
-			setRecordingHint.invoke(cameraParam, true);
-		} catch (Exception e) {
-			android.util.Log.i("AndroidCamera", "couldn't set recording hint");
-		}
+		  try {
+			  Method setRecordingHint = cameraParam.getClass().getMethod("setRecordingHint", boolean.class);
+			  setRecordingHint.invoke(cameraParam, true);
+		  } catch (Exception e) {
+			  android.util.Log.i("AndroidCamera", "couldn't set recording hint");
+		  }
 
-		camera.setParameters(cameraParam);
+		  camera.setParameters(cameraParam);
 
-		cameraParam = camera.getParameters();
-		width = cameraParam.getPreviewSize().width;
-		height = cameraParam.getPreviewSize().height;
-		if (width != w || height != h)
-			android.util.Log.w("AndroidCamera", "camera size different than asked for, resizing (this can slow the app) (" + Integer.toString(width) + "," + Integer.toString(height) + "), (" + Integer.toString(w) + "," + Integer.toString(h) + ")");
+		  cameraParam = camera.getParameters();
+		  width = cameraParam.getPreviewSize().width;
+		  height = cameraParam.getPreviewSize().height;
+		  if (width != w || height != h)
+			  android.util.Log.w("AndroidCamera", "camera size different than asked for, resizing (this can slow the app) (" + Integer.toString(width) + "," + Integer.toString(height) + "), (" + Integer.toString(w) + "," + Integer.toString(h) + ")");
 
-		targetFps = _targetFps;
+		  targetFps = _targetFps;
 
-		// If target fps is not defined, then take the maximum fps
-		if (targetFps == -1) {
-			for (Integer i : cameraParam.getSupportedPreviewFrameRates()) {
-				if (targetFps &lt; i) {
-					targetFps = i;
-				}
-			}
-		}
+		  // If target fps is not defined, then take the maximum fps
+		  if (targetFps == -1) {
+			  for (Integer i : cameraParam.getSupportedPreviewFrameRates()) {
+				  if (targetFps &lt; i) {
+					  targetFps = i;
+				  }
+			  }
+		  }
 
-		android.util.Log.i("AndroidCamera", "Started preview callback width size: " + Integer.toString(width) + "," + Integer.toString(height));
+		  android.util.Log.i("AndroidCamera", "Started preview callback width size: " + Integer.toString(width) + "," + Integer.toString(height));
 
-		camera.setPreviewCallback(new PreviewCallback() {
-			@Override
-			public void onPreviewFrame(byte[] data, Camera camera) {
-				if (camera != null) {
-					try {
-						int Height = camera.getParameters().getPreviewSize().height;
-						int Width = camera.getParameters().getPreviewSize().width;
-						nativeGetFrameData(Width, Height, data);
-					} catch (Exception ex) {
+		  camera.setPreviewCallback(new PreviewCallback() {
+			  @Override
+			  public void onPreviewFrame(byte[] data, Camera camera) {
+          if ( !initialized ) return;
+		      synchronized(cameraLock) {
+				      if (camera != null) {
+					      try {
+						      int Height = camera.getParameters().getPreviewSize().height;
+						      int Width = camera.getParameters().getPreviewSize().width;
+						      nativeGetFrameData(Width, Height, data);
+					      } catch (Exception ex) {
+		                android.util.Log.i("AndroidCamera", "Error getting the parameters");
+					      }
+				      }
+          }
+			  }
+		  });
 
-					}
-				}
-			}
-		});
+		  if (surfaceTexture != null) {
+			  try {
+				  camera.setPreviewTexture(surfaceTexture);
+			  } catch (IOException t) {
+				  android.util.Log.e("AndroidCamera", "Cannot set preview texture target!", t);
+			  }
+			  previewing = true;
+			  camera.startPreview();
+		  }
 
-		if (surfaceTexture != null) {
-			try {
-				camera.setPreviewTexture(surfaceTexture);
-			} catch (IOException t) {
-				android.util.Log.e("AndroidCamera", "Cannot set preview texture target!", t);
-			}
-			previewing = true;
-			camera.startPreview();
-		}
-
-		initialized = true;
-		return true;
+		  initialized = true;
+		  return true;
+    }
 	}
 
 	public void AndroidThunkJava_stopCamera() {
-		if (camera != null) {
-			camera.setPreviewCallback(null);
-			camera.stopPreview();
-			try {
-				camera.setPreviewTexture(null);
-			} catch (Exception ex) {
-			}
-
-			surfaceTexture.release();
-			surfaceTexture = null;
-
-			camera.release();
-			camera = null;
-		}
 		initialized = false;
+		synchronized(cameraLock) {
+		    if (camera != null) {
+			    camera.setPreviewCallback(null);
+			    camera.stopPreview();
+			    try {
+				    camera.setPreviewTexture(null);
+			    } catch (Exception ex) {
+			    }
+
+			    surfaceTexture.release();
+			    surfaceTexture = null;
+
+			    camera.release();
+			    camera = null;
+		    }
+    }
 	}
 
 	public int AndroidThunkJava_getCameraFacing(int facing) {
