@@ -439,7 +439,6 @@ void AndroidVideoGrabber::pause() {
 	stopThread();
 	AndroidThunkCpp_stopCamera();
 	deleteTexture();
-	cameraTexture.Reset();
 }
 
 void  AndroidVideoGrabber::resume() {
