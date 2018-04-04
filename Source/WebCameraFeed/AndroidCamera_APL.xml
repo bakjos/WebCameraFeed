@@ -34,6 +34,7 @@ import android.util.Log;
 import android.Manifest;
 import android.support.v4.app.ActivityCompat;
 import android.support.annotation.NonNull;
+import android.graphics.PointF;
 		</insert>
 	</gameActivityImportAdditions>
 	
@@ -120,15 +121,51 @@ import android.support.annotation.NonNull;
 
 
 		  Parameters cameraParam = camera.getParameters();
+		  float smallestDist = 99999999.0f;
+          int bestW = 0, bestH = 0;
+		  
 
 		  android.util.Log.i("AndroidCamera", "Grabber supported sizes");
 		  for (Size s : cameraParam.getSupportedPreviewSizes()) {
 			  android.util.Log.i("AndroidCamera", s.width + " " + s.height);
 		  }
 
+		   for (Size s : cameraParam.getSupportedPreviewSizes()) {
+		  	  
+		  		if( s.width == w &amp;&amp; s.height == h ){
+                    bestW = w;
+                    bestH = h;
+                    break;
+                }
+                float dist = PointF.length(w - s.width, h - s.height);
+                if( dist &lt; smallestDist ){
+                    smallestDist = dist;
+                    bestW = s.width;
+                    bestH = s.height;
+                }
+          }
+
+          if ( bestW != 0 &amp;&amp; bestH != 0 ){
+          	 if( bestW != w || bestH != h ){
+          	     android.util.Log.w("AndroidCamera", "requested width and height ("  + Integer.toString(w) + "," + Integer.toString(h) + ")  aren't supported. Setting capture size to closest match: " + Integer.toString(bestW) + "," + Integer.toString(bestH) + ")");  
+          	     w = bestW;
+          	     h = bestH;
+          	 }
+
+          }
+
+		  boolean nvSupported = false;
+
 		  android.util.Log.i("AndroidCamera", "Grabber supported formats");
 		  for (Integer i : cameraParam.getSupportedPreviewFormats()) {
 			  android.util.Log.i("AndroidCamera", i.toString());
+			  if ( i == ImageFormat.NV21) nvSupported = true;
+		  }
+
+		  if  ( !nvSupported) {
+		       android.util.Log.i("AndroidCamera", "NV21 is not supported by this device");
+		       camera = null;
+		       return false;
 		  }
 
 		  android.util.Log.i("AndroidCamera", "Grabber supported fps");
