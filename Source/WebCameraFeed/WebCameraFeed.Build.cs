@@ -49,6 +49,7 @@ public class WebCameraFeed : ModuleRules
 	public WebCameraFeed(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+        bEnableExceptions = true;
 		//OptimizeCode = CodeOptimization.Never;
 		
 		PublicIncludePaths.AddRange(

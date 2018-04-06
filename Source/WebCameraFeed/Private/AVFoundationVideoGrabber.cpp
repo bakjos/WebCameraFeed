@@ -413,6 +413,7 @@ AVFoundationVideoGrabber::~AVFoundationVideoGrabber()
 }
 
 void AVFoundationVideoGrabber::close() {
+    bIsInit = false;
     unRegisterDelegates();
     bLock = true;
     if(grabber) {
@@ -422,8 +423,7 @@ void AVFoundationVideoGrabber::close() {
         [grabber release];
         grabber = nil;
     }
-    
-    bIsInit = false;
+
     width = 0;
     height = 0;
     fps        = -1;
@@ -445,12 +445,12 @@ bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
         width = grabber->width;
         height = grabber->height;
         allocateData(width, height, PF_B8G8R8A8);
+         registerDelegates();
         [grabber startCapture];
         startThread();
         
         newFrame=false;
         bIsInit = true;
-         registerDelegates();
         return true;
     } else {
         return false;
@@ -478,7 +478,7 @@ bool AVFoundationVideoGrabber::isFrameNew() const {
 void AVFoundationVideoGrabber::update() {
     newFrame = false;
     
-    if (bHavePixelsChanged == true){
+    if (bHavePixelsChanged && bIsInit){
         bHavePixelsChanged = false;
         frwLock.WriteLock();
         copyDataToTexture(pixels.GetData(), width, height, 4);
@@ -544,6 +544,8 @@ void AVFoundationVideoGrabber::resume () {
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {
+    if ( !bIsInit)
+        return;
     
     if ( mirroredTexture.IsValid()) {
         if ( mirroredTexture->Resource == NULL) {

@@ -88,7 +88,8 @@ protected:
     void ApplicationWillDeactivateDelegate_Handler();
     void ApplicationHasReactivatedDelegate_Handler();	
     
-    bool  mirrored;
+    bool mirrored;
+    bool paused;
     FRWLock  frwLock;
 	
 };
