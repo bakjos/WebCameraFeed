@@ -293,7 +293,6 @@ void  AndroidVideoGrabber::update() {
 	if (bHavePixelsChanged == true) {
 		bHavePixelsChanged = false;
 		frwLock.WriteLock();
-		//copyDataToTexture(pixels.GetData(), width, height, 4);
 
 		if (cameraTexture.IsValid()) {
 			FUpdateTextureRegion2D region(0, 0, 0, 0, width, height);
@@ -302,24 +301,22 @@ void  AndroidVideoGrabber::update() {
 		frwLock.WriteUnlock();
 		newFrame = true;	
 	}
-
-	
-
-	/*ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
-		UpdateThread,
-		JNIEnv*, ENV, ENV, jmethodID, AndroidThunkJava_update, AndroidThunkJava_update,
-		{
-			if (AndroidThunkJava_update && ENV) {
-				FJavaWrapper::CallVoidMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_update);
-			}
-			
-		});*/
 } 
 
 void AndroidVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h) {
 	if (!bIsInit) return;
+    
+    if ( mirroredTexture.IsValid()) {
+        if ( mirroredTexture->Resource == NULL) {
+            frwLock.WriteLock();
+            cameraTexture.Reset();
+            mirroredTexture.Reset();
+            frwLock.WriteUnlock();
+            UE_LOG(LogVideoGrabber, Warning, TEXT("Invalid resource for mirrored Texture"));
+        }
+    }
 
-	if (w != width || h != height) {
+	if (w != width || h != height || !cameraTexture.IsValid()) {
 		if (!cameraTexture.IsValid()) {
 			UE_LOG(LogVideoGrabber, Warning, TEXT("The texture is invalid, reallocating"));
 			__android_log_print(ANDROID_LOG_WARN, LOG_TAG, "The texture is invalid, reallocating");

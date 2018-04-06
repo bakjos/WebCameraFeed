@@ -544,7 +544,19 @@ void AVFoundationVideoGrabber::resume () {
 }
 
 void AVFoundationVideoGrabber::updatePixelsCB(unsigned char *isrc, int w, int h ) {
-	if (w != width || h != height) {
+    
+    if ( mirroredTexture.IsValid()) {
+        if ( mirroredTexture->Resource == NULL) {
+            frwLock.WriteLock();
+            cameraTexture.Reset();
+            mirroredTexture.Reset();
+            frwLock.WriteUnlock();
+            UE_LOG(LogVideoGrabber, Warning, TEXT("Invalid resource for mirrored Texture"));
+        }
+    }
+    
+    
+	if (w != width || h != height || !cameraTexture.IsValid()) {
 		if (!cameraTexture.IsValid()) {
 			UE_LOG(LogVideoGrabber, Warning, TEXT("The texture is invalid, reallocating"));
 		}

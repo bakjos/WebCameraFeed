@@ -18,7 +18,7 @@ DEFINE_LOG_CATEGORY(LogVideoGrabber)
 BaseVideoGrabber::BaseVideoGrabber()
 {
 	_running = false;
-	runnableThread = nullptr;
+	runnableThread = NULL;
 	deviceID  = 0;
     mirrored = false;
 }
@@ -42,10 +42,10 @@ void BaseVideoGrabber::startThread() {
 
 void BaseVideoGrabber::stopThread() {
     
-	if (_running && runnableThread != nullptr) {
+	if (_running && runnableThread) {
         _running = false;
 		runnableThread->Kill();
-		runnableThread= nullptr;
+		runnableThread= NULL;
 	}
 }
 
@@ -93,7 +93,7 @@ void BaseVideoGrabber::resizeData(int w, int h, EPixelFormat InFormat) {
         pixels.Reset();
         pixels.AddUninitialized(MemorySize);
         FMemory::Memzero(pixels.GetData(), MemorySize);
-        frwLock.WriteUnlock();
+      
         
         cameraTexture->ReleaseResource();
         
@@ -118,12 +118,18 @@ void BaseVideoGrabber::resizeData(int w, int h, EPixelFormat InFormat) {
             mirroredTexture->InitCustomFormat(w, h, PF_B8G8R8A8, false);
         }
         
+        frwLock.WriteUnlock();
+        
     }
     
 }
 
-void  BaseVideoGrabber::mirrorTexture_RenderThread(FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState) {
-	if (MirrorTextureRef != nullptr) {
+void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState) {
+    
+    frwLock.ReadLock();
+    
+	if (MirrorTextureRef != NULL ) {
+        
 		::SetRenderTarget(RHICmdList, MirrorTextureRef->GetRenderTargetTexture(), FTextureRHIRef());
 
 		RHICmdList.SetViewport(
@@ -134,8 +140,8 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRHICommandList& RHICmdList, 
         
         UWorld * world = GEngine->GetWorld();
         
-        if ( world != nullptr) {
-            if ( world->Scene != nullptr) {
+        if ( world != NULL) {
+            if ( world->Scene != NULL) {
                 FeatureLevel = world->Scene->GetFeatureLevel();
             }
         }
@@ -174,6 +180,8 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRHICommandList& RHICmdList, 
 
 		DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
 	}
+    
+    frwLock.ReadUnlock();
 }
 
 void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors) {
@@ -188,16 +196,18 @@ void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth
 			{
 				FTextureRenderTargetResource* MirrorTextureResource;
 				FTexture2DRHIRef	TextureRHIRef;
+                FRWLock* frwLock;
 			};
 			FUpdateTextureRegionsData* RegionData = new FUpdateTextureRegionsData;
 			RegionData->MirrorTextureResource = static_cast<FTextureRenderTarget2DResource*>( mirroredTexture->Resource );
 			RegionData->TextureRHIRef = static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI();
+            RegionData->frwLock = &frwLock;
 			
 			ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
 			UpdateTextureRegionsData,
 			FUpdateTextureRegionsData*, RegionData, RegionData,
 			{
-				mirrorTexture_RenderThread(RHICmdList, RegionData->TextureRHIRef, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
+				mirrorTexture_RenderThread(*RegionData->frwLock, RHICmdList, RegionData->TextureRHIRef, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
 				delete RegionData;
 			});
 
@@ -215,7 +225,7 @@ UTexture* BaseVideoGrabber::getTexture() {
 	if (cameraTexture.IsValid()) {
 		return cameraTexture.Get();
 	}
-	return nullptr;
+	return NULL;
 }
 
 bool BaseVideoGrabber::isVideoMirrored() {
@@ -228,13 +238,16 @@ void BaseVideoGrabber::setVideoMirrored( bool mirrored ) {
 
 
 bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
+    bool retVal = false;
+    frwLock.ReadLock();
 	UTexture* texture = getTexture();
-	if ( texture != nullptr ) {
-		return ImageUtility::SaveTextureAsFile(mirrored?
+	if ( texture != NULL ) {
+		retVal = ImageUtility::SaveTextureAsFile(mirrored?
 			static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI(): 
 			static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI(), fileName);
 	}
-	return false;
+    frwLock.ReadUnlock();
+	return retVal;
 }
 
 
