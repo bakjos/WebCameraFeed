@@ -130,7 +130,7 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
     
     frwLock.ReadLock();
     
-	if (MirrorTextureRef != NULL ) {
+	if (MirrorTextureRef) {
         try {
             ::SetRenderTarget(RHICmdList, MirrorTextureRef->GetRenderTargetTexture(), FTextureRHIRef());
 
@@ -142,10 +142,8 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
             
             UWorld * world = GEngine->GetWorld();
             
-            if ( world != NULL) {
-                if ( world->Scene != NULL) {
-                    FeatureLevel = world->Scene->GetFeatureLevel();
-                }
+            if ( world && world->Scene) {
+                FeatureLevel = world->Scene->GetFeatureLevel();
             }
 
             
@@ -298,7 +296,7 @@ bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
     bool retVal = false;
     frwLock.ReadLock();
 	UTexture* texture = getTexture();
-	if ( texture != NULL ) {
+	if ( texture ) {
 		retVal = ImageUtility::SaveTextureAsFile(mirrored?
 			static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI(): 
 			static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI(), fileName);
@@ -310,35 +308,48 @@ bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
 
 void BaseVideoGrabber::registerDelegates() {
     FCoreDelegates::ApplicationWillEnterBackgroundDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler);
-    FCoreDelegates::ApplicationWillDeactivateDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler);
     FCoreDelegates::ApplicationHasEnteredForegroundDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler);
+#if PLATFORM_IOS
+    FCoreDelegates::ApplicationWillDeactivateDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler);
     FCoreDelegates::ApplicationHasReactivatedDelegate.AddRaw(this, &BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler);
+#endif
 }
 
 void BaseVideoGrabber::unRegisterDelegates() {
     FCoreDelegates::ApplicationWillEnterBackgroundDelegate.RemoveAll(this);
-    FCoreDelegates::ApplicationWillDeactivateDelegate.RemoveAll(this);
     FCoreDelegates::ApplicationHasEnteredForegroundDelegate.RemoveAll(this);
-     FCoreDelegates::ApplicationHasReactivatedDelegate.RemoveAll(this);
+#if PLATFORM_IOS
+    FCoreDelegates::ApplicationWillDeactivateDelegate.RemoveAll(this);
+    FCoreDelegates::ApplicationHasReactivatedDelegate.RemoveAll(this);
+#endif
 }
 
 void BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler() {
+#if PLATFORM_IOS
     if ( !paused ) {
         paused = true;
+#endif
         frwLock.WriteLock();
         pause();
         frwLock.WriteUnlock();
+
+#if PLATFORM_IOS
     }
+#endif
 }
 
 void BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler() {
+#if PLATFORM_IOS
     if ( paused) {
         paused = false;
+#endif
         frwLock.WriteLock();
         resume();
         frwLock.WriteUnlock();
-        
+
+#if PLATFORM_IOS
     }
+#endif
 }
 
 
