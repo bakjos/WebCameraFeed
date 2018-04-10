@@ -42,8 +42,8 @@ public:
 
 protected:
     
-    void pause() override {}
-    void resume() override{}
+    void pause() override; 
+    void resume() override;
 	int width;
 	int height;
 	bool bChooseDevice;

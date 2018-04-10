@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "DirectShowVideoGrabber.h"
+#include <Async.h>
 
 #if PLATFORM_WINDOWS
 DirectShowVideoGrabber::DirectShowVideoGrabber()
@@ -70,6 +71,7 @@ bool DirectShowVideoGrabber::setup(int w, int h, bool mirrored) {
 			width = ourRequestedWidth;
 			height = ourRequestedHeight;
 		}
+		registerDelegates();
         setVideoMirrored(mirrored);
 		allocateData(width, height);
 		startThread();
@@ -87,6 +89,19 @@ void DirectShowVideoGrabber::update() {
 	if (bGrabberInited == true){
 		bIsFrameNew = false;
 		if (VI.isFrameNew(device)){
+
+			if (!cameraTexture.IsValid()) {
+				UE_LOG(LogVideoGrabber, Warning, TEXT("The texture is invalid, reallocating"));
+				FEvent* fSemaphore = FGenericPlatformProcess::GetSynchEventFromPool(false);
+				int w = width;
+				int h = height;
+				AsyncTask(ENamedThreads::GameThread, [this, w, h, fSemaphore]() {
+					this->resizeData(w, h, PF_B8G8R8A8);
+					fSemaphore->Trigger();
+				});
+				fSemaphore->Wait();
+				FGenericPlatformProcess::ReturnSynchEventToPool(fSemaphore);
+			}
 
 			bIsFrameNew = true;
 
@@ -142,6 +157,7 @@ bool DirectShowVideoGrabber::isFrameNew() const {
 
 
 void DirectShowVideoGrabber::close() {
+	unRegisterDelegates();
 
 	stopThread();
 
@@ -161,4 +177,12 @@ int DirectShowVideoGrabber::getHeight() const {
 int DirectShowVideoGrabber::getWidth() const {
 	return width;
 }
+
+void DirectShowVideoGrabber::pause() {
+	UE_LOG(LogVideoGrabber, Display,  TEXT("paused"));
+}
+void DirectShowVideoGrabber::resume() {
+	UE_LOG(LogVideoGrabber, Display,  TEXT("resume"));
+}
+
 #endif
