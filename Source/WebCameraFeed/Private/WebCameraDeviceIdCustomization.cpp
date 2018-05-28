@@ -38,11 +38,17 @@ void FWebCameraDeviceIdCustomization::CustomizeHeader(TSharedRef<class IProperty
 			options.Add(TSharedPtr<FString>(new FString(videoDevice.deviceName)));
 		}
 
+        int sel = -1;
+        FPropertyAccess::Result result = SelectedDeviceHandle->GetValue(sel);
+
 		if  (options.Num() == 0) {
 			options.Add(TSharedPtr<FString>(new FString(TEXT("No camera device found"))));
 			SelectedDeviceHandle->SetValue(-1);
 		} else {
-			SelectedDeviceHandle->SetValue(0);
+            if (result != FPropertyAccess::Success) {
+                SelectedDeviceHandle->SetValue(0);
+                sel = 0;
+            }
 		}
 
 		HeaderRow.NameContent()
@@ -55,7 +61,7 @@ void FWebCameraDeviceIdCustomization::CustomizeHeader(TSharedRef<class IProperty
 				SNew(STextComboBox)
 				.OptionsSource(&options)
 				.OnSelectionChanged(this, &FWebCameraDeviceIdCustomization::OnSelectionChanged)
-				.InitiallySelectedItem(options[0])
+				.InitiallySelectedItem(sel>=0 && sel < options.Num()?options[sel]: options[0])
 			];
 
 		
@@ -72,8 +78,10 @@ void  FWebCameraDeviceIdCustomization::OnSelectionChanged(TSharedPtr<FString> va
 		int i = 0;
 		for ( const FVideoDevice& videoDevice : devices  ) {
 			if ( videoDevice.deviceName == *value.Get()) {
-				SelectedDeviceHandle->SetValue(i);
-				break;
+                FPropertyAccess::Result result = SelectedDeviceHandle->SetValue(i);
+                if (result == FPropertyAccess::Success) {
+                    break;
+                }
 			}
 			i++;
 		}
