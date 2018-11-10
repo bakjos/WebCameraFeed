@@ -88,6 +88,7 @@ public class WebCameraFeed : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "Projects",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
