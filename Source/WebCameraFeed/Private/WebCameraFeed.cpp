@@ -1,7 +1,9 @@
 // Copyright 1998-2017 Epic Games, Inc. All Rights Reserved.
 
 #include "WebCameraFeed.h"
+#include "Interfaces/IPluginManager.h"
 #include "VideoGrabberPool.h"
+
 
 #define LOCTEXT_NAMESPACE "FWebCameraFeedModule"
 
@@ -19,6 +21,9 @@ void FWebCameraFeedModule::StartupModule()
 	FPropertyEditorModule& PropertyModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
 	PropertyModule.RegisterCustomPropertyTypeLayout("WebCameraDeviceId",  FOnGetPropertyTypeCustomizationInstance::CreateStatic(&FWebCameraDeviceIdCustomization::MakeInstance));
 #endif
+
+	FString PluginShaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("WebCameraFeed"))->GetBaseDir(), TEXT("Shaders"));
+	AddShaderSourceDirectoryMapping(TEXT("/Plugin/WebCameraFeed"), PluginShaderDir);
 
 }
 
