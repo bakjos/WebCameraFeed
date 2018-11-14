@@ -48,7 +48,12 @@ void FWebCameraDeviceIdCustomization::CustomizeHeader(TSharedRef<class IProperty
             if (result != FPropertyAccess::Success) {
                 SelectedDeviceHandle->SetValue(0);
                 sel = 0;
-            }
+			}
+			else if (sel >= options.Num()) {
+				sel = options.Num() - 1;
+				if (sel < 0) sel = 0;
+				SelectedDeviceHandle->SetValue(sel);
+			}
 		}
 
 		HeaderRow.NameContent()

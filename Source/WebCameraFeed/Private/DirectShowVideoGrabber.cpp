@@ -43,6 +43,14 @@ TArray<FVideoDevice> DirectShowVideoGrabber::listDevices() const{
 bool DirectShowVideoGrabber::setup(int w, int h, bool mirrored) {
 	if (bChooseDevice) {
 		device = deviceID;
+		std::vector <std::string> devList = VI.getDeviceList();
+		if (device >= devList.size()) {
+			device = devList.size() - 1;
+		}
+		if (device < 0) {
+			device = 0;
+		}
+
 		UE_LOG(LogVideoGrabber, Verbose,  TEXT("initGrabber(): choosing %d"), deviceID);
 	}
 	else {

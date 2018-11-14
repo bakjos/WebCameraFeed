@@ -22,6 +22,15 @@ UWebCameraComponent::UWebCameraComponent()
 void UWebCameraComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	TArray<FString> devices = ListDevices();
+
+	if (devices.Num() >= DeviceId.selectedDevice) {
+		DeviceId.selectedDevice = devices.Num() - 1;
+	}
+
+	if (DeviceId.selectedDevice < 0) DeviceId.selectedDevice = 0;
+
 	currentVideoGrabber = VideoGrabberPool::GetVideoGrabber(DeviceId.selectedDevice, requestedWidth, requestedHeight, MirroredVideo);
 	
 }
