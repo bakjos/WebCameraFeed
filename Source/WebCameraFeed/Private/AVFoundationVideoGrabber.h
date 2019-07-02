@@ -84,7 +84,8 @@ public:
 	int getFrontCamera() const override;
     
 protected:
-    
+
+    bool setupWithGrant(int w, int h, bool mirrored);
     void pause() override;
     void resume() override;
     

@@ -432,20 +432,14 @@ void AVFoundationVideoGrabber::close() {
     bLock = false;
 }
 
-bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
-    if( grabber == nil ){
-        grabber = [OSXVideoGrabber alloc];
-    }
-    
-    grabber->grabberPtr = this;
-    
+bool AVFoundationVideoGrabber::setupWithGrant(int w, int h, bool mirrored) {
     if( [grabber initCapture:fps capWidth:w capHeight:h capMirror: mirrored] ) {
         //update the pixel dimensions based on what the camera supports
         setVideoMirrored (mirrored);
         width = grabber->width;
         height = grabber->height;
         allocateData(width, height, PF_B8G8R8A8);
-         registerDelegates();
+        registerDelegates();
         [grabber startCapture];
         startThread();
         
@@ -454,7 +448,54 @@ bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
         return true;
     } else {
         return false;
-    }   
+    }
+}
+bool AVFoundationVideoGrabber::setup(int w, int h, bool mirrored) {
+    if( grabber == nil ){
+        grabber = [OSXVideoGrabber alloc];
+    }
+    
+    grabber->grabberPtr = this;
+    
+    
+    switch ([AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo])
+    {
+        case AVAuthorizationStatusAuthorized:
+        {
+            // The user has previously granted access to the camera.
+            return setupWithGrant(w, h, mirrored);
+
+        }
+        case AVAuthorizationStatusNotDetermined:
+        {
+#if WITH_EDITOR
+             UE_LOG(LogVideoGrabber, Error,  TEXT( "Requesting access to the camera in editor mode is not possible"));
+            return false;
+#else
+            UE_LOG(LogVideoGrabber, Verbose,  TEXT( "Requesting access to the camera"));            // The app hasn't yet asked the user for camera access.
+            [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+                if (granted) {
+                    setupWithGrant(w, h, mirrored);
+                } else {
+                    UE_LOG(LogVideoGrabber, Error,  TEXT( "The user has denied access to the camera"));
+                }
+            }];
+            break;
+#endif
+        }
+        case AVAuthorizationStatusDenied:
+        {
+            UE_LOG(LogVideoGrabber, Error,  TEXT( "The user has previously denied access to the camera"));
+            return false;
+        }
+        case AVAuthorizationStatusRestricted:
+        {
+            UE_LOG(LogVideoGrabber, Error,  TEXT( "The user can't grant access to the camera due to restrictions."));
+            return false;
+        }
+    }
+    return true;
+    
 }
 
 TArray<FVideoDevice> AVFoundationVideoGrabber::listDevices() const {

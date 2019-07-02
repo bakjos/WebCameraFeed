@@ -1,4 +1,4 @@
-Web Camera plugin for unreal engine 
+Web Camera plugin for unreal engine
 ===================================
 
 A plugin that let's you use a web camera on Windows, using VideoInput library (direct show), Mac and IOS, using the AVFoundation Library and Android using the Android Camera API through JNI
@@ -7,7 +7,7 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
 ## Features:
    - A widget component named 'WebCameraWidget' to view the camera feed from a User Interface Blue Print
    - An Actor Component named 'WebCameraComponent' to generate the texture and use it from any Actor
-   - Both components allow to select the device, request a desired width and height and mirroring using a Global Shader 
+   - Both components allow to select the device, request a desired width and height and mirroring using a Global Shader
 
 ## How to use
 
@@ -22,18 +22,18 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
 
 4. If you want to use the actor component you'll need to do the following:
 	- Create a material with a TextureSamplerParameter2D parameter
-		
+
 		![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/Material.png?raw=true)
 
 		![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/TextureSamplerParameter2D.png?raw=true)
-		
+
 
 	- Create a blue print actor and add a Web Camera component
-	  
+
 	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActorComponent.png?raw=true)
 
 	 - Put inside the creation script the dynamic material creation and assign the web camera texture to the TextureSamplerParameter2D parameter
-	  
+
 	  ![Camera Category](https://github.com/bakjos/WebCameraFeed/blob/master/docs/BluePrintActor.png?raw=true)
 
   	- When you're using the mobile version, is necessary to add inside the tick event of the actor the code to set the texture parameter again
@@ -44,3 +44,5 @@ A plugin that let's you use a web camera on Windows, using VideoInput library (d
         `<key>NSCameraUsageDescription</key><string>Camera is used for AR functionality</string>`
 
 	  A sample material and a sample blue print actor are inside the Content folder
+
+ 5. The latest versions of OSX require the request to access to the camera, so this plugin won't work while in the editor, to be able to use the camera in the binary, the Resources folder inside WebCameraFeed⁩ ▸ ⁨Source⁩ ▸ ⁨WebCameraFeed⁩ needs to be copied to the {project name} ▸ ⁨Source⁩ ▸ {project name} folder to be able to include the info.plist with the camera permission 
