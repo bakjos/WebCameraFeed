@@ -11,7 +11,11 @@
 #include <Public/RHIUtilities.h>
 #include <Engine/TextureRenderTarget2D.h>
 
+static const uint32 kGridSubdivisionX = 32;
+static const uint32 kGridSubdivisionY = 16;
+
 TGlobalResource<FTextureVertexDeclaration> GTextureVertexDeclaration;
+
 
 DEFINE_LOG_CATEGORY(LogVideoGrabber)
 
@@ -132,8 +136,15 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
     
 	if (MirrorTextureRef) {
         try {
-            ::SetRenderTarget(RHICmdList, MirrorTextureRef->GetRenderTargetTexture(), FTextureRHIRef());
-
+            
+            FRHITexture2D* RenderTargetTexture = MirrorTextureRef->GetRenderTargetTexture();
+            
+            RHICmdList.TransitionResource(EResourceTransitionAccess::EWritable, RenderTargetTexture);
+            
+            FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::DontLoad_Store, MirrorTextureRef->TextureRHI);
+            RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMirrorTexture"));
+            
+           
             RHICmdList.SetViewport(
                 0, 0, 0.f,
                 TextureRHIRef->GetSizeX(), TextureRHIRef->GetSizeY(), 1.f);
@@ -168,17 +179,11 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
             PixelShader->SetParameters(RHICmdList, TextureRHIRef, true);
 
             // Draw a fullscreen quad that we can run our pixel shader on
-            FTextureVertex Vertices[4];
-            Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
-            Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
-            Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
-            Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
-            Vertices[0].UV = FVector2D(0, 0);
-            Vertices[1].UV = FVector2D(1, 0);
-            Vertices[2].UV = FVector2D(0, 1);
-            Vertices[3].UV = FVector2D(1, 1);
-
-            DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
+            // Draw grid.
+            uint32 PrimitiveCount = kGridSubdivisionX * kGridSubdivisionY * 2;
+            RHICmdList.DrawPrimitive(0, PrimitiveCount, 1);
+            
+            RHICmdList.EndRenderPass();
 
         } catch(...) {
             
