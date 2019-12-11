@@ -204,21 +204,13 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
 			// Draw a fullscreen quad that we can run our pixel shader on
 #if (ENGINE_MINOR_VERSION >= 21)
 			FVertexBufferRHIRef VertexBufferRHI = CreateQuadVertexBuffer();
-			static const uint32 NumVerts = 4;
-			static const uint32 NumTris = 2;
-
-			static const uint16 Indices[] = { 0, 1, 2, 3 };
-			FRHIResourceCreateInfo CreateInfo;
-
-			FIndexBufferRHIRef IndexBufferRHI = RHICreateIndexBuffer(sizeof(uint16), sizeof(uint16) * 12, BUF_Volatile, CreateInfo);
-			void* VoidPtr2 = RHILockIndexBuffer(IndexBufferRHI, 0, sizeof(uint16) * 12, RLM_WriteOnly);
-			FPlatformMemory::Memcpy(VoidPtr2, Indices, sizeof(uint16) * 12);
-			RHIUnlockIndexBuffer(IndexBufferRHI);
-
+			
 			RHICmdList.SetStreamSource(0, VertexBufferRHI, 0);
-			RHICmdList.DrawIndexedPrimitive(IndexBufferRHI, 0, 0, NumVerts, 0, NumTris, 1);
-
-			IndexBufferRHI.SafeRelease();
+#if (ENGINE_MINOR_VERSION >= 23)
+			RHICmdList.DrawPrimitive(0, 2, 1);
+#else
+			RHICmdList.DrawPrimitive(PT_TriangleStrip, 0, 2, 1);
+#endif
 			VertexBufferRHI.SafeRelease();
 
 #else
