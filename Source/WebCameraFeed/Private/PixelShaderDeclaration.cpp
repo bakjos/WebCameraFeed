@@ -37,12 +37,18 @@ FWebCameraMirrorPS::FWebCameraMirrorPS(const ShaderMetaType::CompiledShaderIniti
 }
 
 
-void FWebCameraMirrorPS::SetParameters(FRHICommandList& RHICmdList, FTextureRHIParamRef UITextureRHI, bool mirror)
+void FWebCameraMirrorPS::SetParameters(FRHICommandList& RHICmdList, FTextureResource* resource, bool mirror)
 {
-    FPixelShaderRHIParamRef PixelShaderRHI = GetPixelShader();
+	FRHIPixelShader* PixelShaderRHI = GetPixelShader();
+
+	FRHISamplerState* samplerState = resource->SamplerStateRHI;
+	if (!samplerState) {
+		samplerState = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+	}
+	
     
     SetShaderValue(RHICmdList, PixelShaderRHI, mirrorParameter, mirror);
-    SetTextureParameter(RHICmdList, PixelShaderRHI, TextureParameter, TextureParameterSampler, TStaticSamplerState<SF_Point>::GetRHI(), UITextureRHI);
+    SetTextureParameter(RHICmdList, PixelShaderRHI, TextureParameter, TextureParameterSampler, samplerState, resource->TextureRHI);
 }
 
 

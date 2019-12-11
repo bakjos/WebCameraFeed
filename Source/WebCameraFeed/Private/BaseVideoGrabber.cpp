@@ -19,6 +19,26 @@ TGlobalResource<FTextureVertexDeclaration> GTextureVertexDeclaration;
 
 DEFINE_LOG_CATEGORY(LogVideoGrabber)
 
+FVertexBufferRHIRef CreateQuadVertexBuffer()
+{
+	FRHIResourceCreateInfo CreateInfo;
+	FVertexBufferRHIRef VertexBufferRHI = RHICreateVertexBuffer(sizeof(FTextureVertex) * 4, BUF_Volatile, CreateInfo);
+	void* VoidPtr = RHILockVertexBuffer(VertexBufferRHI, 0, sizeof(FTextureVertex) * 4, RLM_WriteOnly);
+
+	FTextureVertex* Vertices = (FTextureVertex*)VoidPtr;
+	Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
+	Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
+	Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
+	Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
+	Vertices[0].UV = FVector2D(0, 0);
+	Vertices[1].UV = FVector2D(1, 0);
+	Vertices[2].UV = FVector2D(0, 1);
+	Vertices[3].UV = FVector2D(1, 1);
+	RHIUnlockVertexBuffer(VertexBufferRHI);
+
+	return VertexBufferRHI;
+}
+
 BaseVideoGrabber::BaseVideoGrabber()
 {
 	_running = false;
@@ -130,64 +150,99 @@ void BaseVideoGrabber::resizeData(int w, int h, EPixelFormat InFormat) {
     
 }
 
-void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState) {
+void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommandList& RHICmdList, FTextureResource* TextureResource, FTextureRenderTargetResource* MirrorTextureRef, FRHIDepthStencilState* DepthStencilState) {
     
     frwLock.ReadLock();
     
 	if (MirrorTextureRef) {
-        try {
+        
             
-            FRHITexture2D* RenderTargetTexture = MirrorTextureRef->GetRenderTargetTexture();
-            
-            RHICmdList.TransitionResource(EResourceTransitionAccess::EWritable, RenderTargetTexture);
-            
-            FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::DontLoad_Store, MirrorTextureRef->TextureRHI);
-            RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMirrorTexture"));
-            
-           
-            RHICmdList.SetViewport(
-                0, 0, 0.f,
-                TextureRHIRef->GetSizeX(), TextureRHIRef->GetSizeY(), 1.f);
-            
-            ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
-            
-            UWorld * world = GEngine->GetWorld();
-            
-            if ( world && world->Scene) {
-                FeatureLevel = world->Scene->GetFeatureLevel();
-            }
+		const FTexture2DRHIRef& RenderTargetTexture = MirrorTextureRef->GetRenderTargetTexture();
 
-            
-            
-            TShaderMap<FGlobalShaderType>* ShaderMap = GetGlobalShaderMap(FeatureLevel);
+		RHICmdList.TransitionResource(EResourceTransitionAccess::EWritable, RenderTargetTexture);
 
-            TShaderMapRef<FWebCameraMirrorVS> VertexShader(ShaderMap);
-            TShaderMapRef<FWebCameraMirrorPS> PixelShader(ShaderMap);
+		FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::DontLoad_Store, MirrorTextureRef->TextureRHI);
+		RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMirrorTexture"));
+		{
+			// Update viewport.
+			RHICmdList.SetViewport(
+				0, 0, 0.f,
+				MirrorTextureRef->GetSizeX(), MirrorTextureRef->GetSizeY(), 1.f);
+
+				
+			ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
+
+			UWorld * world = GEngine->GetWorld();
+
+			if (world && world->Scene) {
+				FeatureLevel = world->Scene->GetFeatureLevel();
+			}
+
+			// Get shaders.
+			TShaderMap<FGlobalShaderType>* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+			TShaderMapRef<FWebCameraMirrorVS> VertexShader(GlobalShaderMap);
+			TShaderMapRef<FWebCameraMirrorPS> PixelShader(GlobalShaderMap);
+
+			// Set the graphic pipeline state.
+			FGraphicsPipelineStateInitializer GraphicsPSOInit;
+			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+			GraphicsPSOInit.DepthStencilState = DepthStencilState;
+			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
+			GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
+			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
+			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = GETSAFERHISHADER_VERTEX(*VertexShader);
+			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = GETSAFERHISHADER_PIXEL(*PixelShader);
+			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
+
+		
+
+			// Update shader uniform parameters.
+			PixelShader->SetParameters(RHICmdList, TextureResource, true);
 
 
-            FGraphicsPipelineStateInitializer GraphicsPSOInit;
-            RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-            GraphicsPSOInit.DepthStencilState = DepthStencilState;
-            GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-            GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
-            GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
-            GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
-            GraphicsPSOInit.BoundShaderState.VertexShaderRHI = GETSAFERHISHADER_VERTEX(*VertexShader);
-            GraphicsPSOInit.BoundShaderState.PixelShaderRHI = GETSAFERHISHADER_PIXEL(*PixelShader);
+			// Draw a fullscreen quad that we can run our pixel shader on
+#if (ENGINE_MINOR_VERSION >= 21)
+			FVertexBufferRHIRef VertexBufferRHI = CreateQuadVertexBuffer();
+			static const uint32 NumVerts = 4;
+			static const uint32 NumTris = 2;
 
-            SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
-            PixelShader->SetParameters(RHICmdList, TextureRHIRef, true);
+			static const uint16 Indices[] = { 0, 1, 2, 3 };
+			FRHIResourceCreateInfo CreateInfo;
 
-            // Draw a fullscreen quad that we can run our pixel shader on
-            // Draw grid.
-            uint32 PrimitiveCount = kGridSubdivisionX * kGridSubdivisionY * 2;
-            RHICmdList.DrawPrimitive(0, PrimitiveCount, 1);
-            
-            RHICmdList.EndRenderPass();
+			FIndexBufferRHIRef IndexBufferRHI = RHICreateIndexBuffer(sizeof(uint16), sizeof(uint16) * 12, BUF_Volatile, CreateInfo);
+			void* VoidPtr2 = RHILockIndexBuffer(IndexBufferRHI, 0, sizeof(uint16) * 12, RLM_WriteOnly);
+			FPlatformMemory::Memcpy(VoidPtr2, Indices, sizeof(uint16) * 12);
+			RHIUnlockIndexBuffer(IndexBufferRHI);
 
-        } catch(...) {
-            
-        }
+			RHICmdList.SetStreamSource(0, VertexBufferRHI, 0);
+			RHICmdList.DrawIndexedPrimitive(IndexBufferRHI, 0, 0, NumVerts, 0, NumTris, 1);
+
+			IndexBufferRHI.SafeRelease();
+			VertexBufferRHI.SafeRelease();
+
+#else
+			FTextureVertex Vertices[4];
+			Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
+			Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
+			Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
+			Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
+			Vertices[0].UV = FVector2D(0, 0);
+			Vertices[1].UV = FVector2D(1, 0);
+			Vertices[2].UV = FVector2D(0, 1);
+			Vertices[3].UV = FVector2D(1, 1);
+
+			// Deprecated in 4.21
+			DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
+
+#endif
+
+
+		}
+		RHICmdList.EndRenderPass();
+
+        
+       
 
 	}
     
@@ -252,19 +307,19 @@ void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth
                 struct FUpdateTextureRegionsData
                 {
                     FTextureRenderTargetResource* MirrorTextureResource;
-                    FTexture2DRHIRef	TextureRHIRef;
+                    FTextureResource*	TextureResource;
                     FRWLock* frwLock;
                 };
                 FUpdateTextureRegionsData* RegionData = new FUpdateTextureRegionsData;
                 RegionData->MirrorTextureResource = static_cast<FTextureRenderTarget2DResource*>( mirroredTexture->Resource );
-                RegionData->TextureRHIRef = static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI();
+                RegionData->TextureResource = static_cast<FTexture2DResource*>(cameraTexture->Resource);
                 RegionData->frwLock = &frwLock;
                 
                 ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
                 UpdateTextureRegionsData,
                 FUpdateTextureRegionsData*, RegionData, RegionData,
                 {
-                    mirrorTexture_RenderThread(*RegionData->frwLock, RHICmdList, RegionData->TextureRHIRef, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
+                    mirrorTexture_RenderThread(*RegionData->frwLock, RHICmdList, RegionData->TextureResource, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
                     delete RegionData;
                 });
 

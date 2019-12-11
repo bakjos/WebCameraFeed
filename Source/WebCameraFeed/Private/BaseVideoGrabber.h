@@ -75,7 +75,7 @@ protected:
 	void copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors);
 	void startThread();
 	void stopThread();
-	static void mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommandList& RHICmdList, FTexture2DRHIRef TextureRHIRef, FTextureRenderTargetResource* MirrorTextureRef, FDepthStencilStateRHIParamRef DepthStencilState);
+	static void mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommandList& RHICmdList, FTextureResource* TextureResource, FTextureRenderTargetResource* MirrorTextureRef, FRHIDepthStencilState* DepthStencilState);
 
 	FRunnableThread* runnableThread;
 	bool _running;

@@ -26,6 +26,7 @@
 
 #include "GlobalShader.h"
 #include "UniformBuffer.h"
+#include "TextureResource.h"
 #include "RHICommandList.h"
 #include "ShaderParameterUtils.h"
 #include <Runtime/Launch/Resources/Version.h>
@@ -128,7 +129,7 @@ public:
 	}
 
 	
-    void SetParameters(FRHICommandList& RHICmdList, FTextureRHIParamRef UITextureRHI, bool mirror);
+    void SetParameters(FRHICommandList& RHICmdList, FTextureResource* UITextureRHI, bool mirror);
 
 private:
 	//This is how you declare resources that are going to be made available in the HLSL
