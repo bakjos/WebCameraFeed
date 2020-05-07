@@ -27,28 +27,13 @@
 
 
 
-FWebCameraMirrorPS::FWebCameraMirrorPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+FWebCameraMirrorShader::FWebCameraMirrorShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
 : FGlobalShader(Initializer)
 {
 	
 	TextureParameter.Bind(Initializer.ParameterMap, TEXT("TextureParameter"));  //The text parameter here is the name of the parameter in the shader
     TextureParameterSampler.Bind(Initializer.ParameterMap, TEXT("TextureParameterSampler"));
     mirrorParameter.Bind(Initializer.ParameterMap, TEXT("Mirror"));
-}
-
-
-void FWebCameraMirrorPS::SetParameters(FRHICommandList& RHICmdList, FTextureResource* resource, bool mirror)
-{
-	FRHIPixelShader* PixelShaderRHI = GetPixelShader();
-
-	FRHISamplerState* samplerState = resource->SamplerStateRHI;
-	if (!samplerState) {
-		samplerState = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
-	}
-	
-    
-    SetShaderValue(RHICmdList, PixelShaderRHI, mirrorParameter, mirror);
-    SetTextureParameter(RHICmdList, PixelShaderRHI, TextureParameter, TextureParameterSampler, samplerState, resource->TextureRHI);
 }
 
 

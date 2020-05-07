@@ -72,6 +72,7 @@ public:
 class FWebCameraMirrorVS : public FGlobalShader
 {
 	DECLARE_SHADER_TYPE(FWebCameraMirrorVS, Global);
+
 public:
 
 	static bool ShouldCache(EShaderPlatform Platform) { return true; }
@@ -96,15 +97,16 @@ public:
 /* It is the main bridge between the HLSL located in the engine directory  */
 /* and the engine itself.                                                  */
 /***************************************************************************/
-class FWebCameraMirrorPS : public FGlobalShader
+class FWebCameraMirrorShader : public FGlobalShader
 {
-	DECLARE_SHADER_TYPE(FWebCameraMirrorPS, Global);
+	
+	DECLARE_INLINE_TYPE_LAYOUT(FWebCameraMirrorShader, NonVirtual);
 
 public:
 
-	FWebCameraMirrorPS() {}
+	FWebCameraMirrorShader() {}
 
-	explicit FWebCameraMirrorPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
+	FWebCameraMirrorShader(const ShaderMetaType::CompiledShaderInitializerType& Initializer);
 
 	static bool ShouldCache(EShaderPlatform Platform) { return IsFeatureLevelSupported(Platform, ERHIFeatureLevel::SM5); }
  
@@ -117,24 +119,34 @@ public:
     }
 #endif
 
-	virtual bool Serialize(FArchive& Ar) override
-	{
-		bool bShaderHasOutdatedParams = FGlobalShader::Serialize(Ar);
-
-		Ar << TextureParameter;
-        Ar << TextureParameterSampler;
-		Ar << mirrorParameter;
-
-		return bShaderHasOutdatedParams;
-	}
-
 	
-    void SetParameters(FRHICommandList& RHICmdList, FTextureResource* UITextureRHI, bool mirror);
+	template<typename TShaderRHIParamRef>
+	void SetParameters(FRHICommandList& RHICmdList, const TShaderRHIParamRef ShaderRHI, FTextureResource* UITextureRHI, bool mirror) {
+		FRHISamplerState* samplerState = UITextureRHI->SamplerStateRHI;
+		if (!samplerState) {
+			samplerState = TStaticSamplerState<SF_Point, AM_Clamp, AM_Clamp, AM_Clamp>::GetRHI();
+		}
+
+
+		SetShaderValue(RHICmdList, ShaderRHI, mirrorParameter, mirror);
+		SetTextureParameter(RHICmdList, ShaderRHI, TextureParameter, TextureParameterSampler, samplerState, UITextureRHI->TextureRHI);
+	}
 
 private:
 	//This is how you declare resources that are going to be made available in the HLSL
-	FShaderResourceParameter TextureParameter;
-    FShaderResourceParameter TextureParameterSampler;
-    
-    FShaderParameter mirrorParameter;
+	LAYOUT_FIELD(FShaderResourceParameter,TextureParameter);
+	LAYOUT_FIELD(FShaderResourceParameter, TextureParameterSampler);
+	LAYOUT_FIELD(FShaderParameter,mirrorParameter);
+};
+
+class FWebCameraMirrorPS : public FWebCameraMirrorShader {
+	DECLARE_SHADER_TYPE(FWebCameraMirrorPS, Global);
+public:
+	/** Default constructor. */
+	FWebCameraMirrorPS() {}
+
+	/** Initialization constructor. */
+	FWebCameraMirrorPS(const ShaderMetaType::CompiledShaderInitializerType& Initializer)
+		: FWebCameraMirrorShader(Initializer)
+	{ }
 };

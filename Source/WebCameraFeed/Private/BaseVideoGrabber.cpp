@@ -179,7 +179,7 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
 			}
 
 			// Get shaders.
-			TShaderMap<FGlobalShaderType>* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
+            FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
 			TShaderMapRef<FWebCameraMirrorVS> VertexShader(GlobalShaderMap);
 			TShaderMapRef<FWebCameraMirrorPS> PixelShader(GlobalShaderMap);
 
@@ -191,14 +191,14 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
 			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
 			GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
 			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
-			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = GETSAFERHISHADER_VERTEX(*VertexShader);
-			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = GETSAFERHISHADER_PIXEL(*PixelShader);
+			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
 			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
 
 		
 
 			// Update shader uniform parameters.
-			PixelShader->SetParameters(RHICmdList, TextureResource, true);
+			PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), TextureResource, true);
 
 
 			// Draw a fullscreen quad that we can run our pixel shader on
