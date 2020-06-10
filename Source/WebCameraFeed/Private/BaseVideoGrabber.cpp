@@ -11,8 +11,6 @@
 #include <Public/RHIUtilities.h>
 #include <Engine/TextureRenderTarget2D.h>
 
-static const uint32 kGridSubdivisionX = 32;
-static const uint32 kGridSubdivisionY = 16;
 
 TGlobalResource<FTextureVertexDeclaration> GTextureVertexDeclaration;
 
@@ -21,90 +19,90 @@ DEFINE_LOG_CATEGORY(LogVideoGrabber)
 
 FVertexBufferRHIRef CreateQuadVertexBuffer()
 {
-	FRHIResourceCreateInfo CreateInfo;
-	FVertexBufferRHIRef VertexBufferRHI = RHICreateVertexBuffer(sizeof(FTextureVertex) * 4, BUF_Volatile, CreateInfo);
-	void* VoidPtr = RHILockVertexBuffer(VertexBufferRHI, 0, sizeof(FTextureVertex) * 4, RLM_WriteOnly);
-
-	FTextureVertex* Vertices = (FTextureVertex*)VoidPtr;
-	Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
-	Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
-	Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
-	Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
-	Vertices[0].UV = FVector2D(0, 0);
-	Vertices[1].UV = FVector2D(1, 0);
-	Vertices[2].UV = FVector2D(0, 1);
-	Vertices[3].UV = FVector2D(1, 1);
-	RHIUnlockVertexBuffer(VertexBufferRHI);
-
-	return VertexBufferRHI;
+    FRHIResourceCreateInfo CreateInfo;
+    FVertexBufferRHIRef VertexBufferRHI = RHICreateVertexBuffer(sizeof(FTextureVertex) * 4, BUF_Volatile, CreateInfo);
+    void* VoidPtr = RHILockVertexBuffer(VertexBufferRHI, 0, sizeof(FTextureVertex) * 4, RLM_WriteOnly);
+    
+    FTextureVertex* Vertices = (FTextureVertex*)VoidPtr;
+    Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
+    Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
+    Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
+    Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
+    Vertices[0].UV = FVector2D(0, 0);
+    Vertices[1].UV = FVector2D(1, 0);
+    Vertices[2].UV = FVector2D(0, 1);
+    Vertices[3].UV = FVector2D(1, 1);
+    RHIUnlockVertexBuffer(VertexBufferRHI);
+    
+    return VertexBufferRHI;
 }
 
 BaseVideoGrabber::BaseVideoGrabber()
 {
-	_running = false;
-	runnableThread = NULL;
-	deviceID  = 0;
+    _running = false;
+    runnableThread = NULL;
+    deviceID  = 0;
     mirrored = false;
     paused = false;
 }
 
 void BaseVideoGrabber::setDeviceID(int _deviceID) {
-	deviceID = _deviceID;
+    deviceID = _deviceID;
 }
 
 int BaseVideoGrabber::getDeviceID() {
-	return deviceID;
+    return deviceID;
 }
 BaseVideoGrabber::~BaseVideoGrabber(){
-	stopThread();
+    stopThread();
 }
 
 void BaseVideoGrabber::startThread() {
-	stopThread();
-	_running = true;
-	runnableThread = FRunnableThread::Create(this, TEXT("VideoGrabberThread"));
+    stopThread();
+    _running = true;
+    runnableThread = FRunnableThread::Create(this, TEXT("VideoGrabberThread"));
 }
 
 void BaseVideoGrabber::stopThread() {
     
-	if (_running && runnableThread) {
+    if (_running && runnableThread) {
         _running = false;
-		runnableThread->Kill();
-		runnableThread= NULL;
-	}
+        runnableThread->Kill();
+        runnableThread= NULL;
+    }
 }
 
 uint32 BaseVideoGrabber::Run() {
     paused = false;
-	while (_running)
-	{
-		update();
-		FPlatformProcess::Sleep(0.016);
-	}
-	
-	return 0;
+    while (_running)
+    {
+        update();
+        FPlatformProcess::Sleep(0.016);
+    }
+    
+    return 0;
 }
 
 void BaseVideoGrabber::allocateData(int w, int h, EPixelFormat InFormat) {
-	frwLock.WriteLock();
-	uint32 MemorySize = w*h * 4;
-	pixels.Reset();
-	pixels.AddUninitialized(MemorySize);
-	FMemory::Memzero(pixels.GetData(), MemorySize);
+    frwLock.WriteLock();
+    uint32 MemorySize = w*h * 4;
+    pixels.Reset();
+    pixels.AddUninitialized(MemorySize);
+    FMemory::Memzero(pixels.GetData(), MemorySize);
     
     
     
     cameraTexture = UTexture2D::CreateTransient(w, h, InFormat);
-	FTexture2DMipMap& Mip = cameraTexture->PlatformData->Mips[0];
-	void* Data = Mip.BulkData.Lock(LOCK_READ_WRITE);
-	FMemory::Memcpy(Data, pixels.GetData(), MemorySize);
-	Mip.BulkData.Unlock();
-	cameraTexture->UpdateResource();
-	
-	if (mirrored) {
-		mirroredTexture = NewObject<UTextureRenderTarget2D>();
-		mirroredTexture->InitCustomFormat(w, h, PF_B8G8R8A8, false);
-	}
+    FTexture2DMipMap& Mip = cameraTexture->PlatformData->Mips[0];
+    void* Data = Mip.BulkData.Lock(LOCK_READ_WRITE);
+    FMemory::Memcpy(Data, pixels.GetData(), MemorySize);
+    Mip.BulkData.Unlock();
+    cameraTexture->UpdateResource();
+    
+    if (mirrored) {
+        mirroredTexture = NewObject<UTextureRenderTarget2D>();
+        mirroredTexture->InitCustomFormat(w, h, PF_B8G8R8A8, false);
+    }
     
     frwLock.WriteUnlock();
 }
@@ -119,7 +117,7 @@ void BaseVideoGrabber::resizeData(int w, int h, EPixelFormat InFormat) {
         pixels.Reset();
         pixels.AddUninitialized(MemorySize);
         FMemory::Memzero(pixels.GetData(), MemorySize);
-      
+        
         
         cameraTexture->ReleaseResource();
         
@@ -135,7 +133,7 @@ void BaseVideoGrabber::resizeData(int w, int h, EPixelFormat InFormat) {
         
         cameraTexture->UpdateResource();
         
-        	
+        
         
         if (mirrored) {
             if (!mirroredTexture.IsValid()) {
@@ -154,89 +152,83 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
     
     frwLock.ReadLock();
     
-	if (MirrorTextureRef) {
+    if (MirrorTextureRef) {
         
+        
+        const FTexture2DRHIRef& RenderTargetTexture = MirrorTextureRef->GetRenderTargetTexture();
+        
+        RHICmdList.TransitionResource(EResourceTransitionAccess::EWritable, RenderTargetTexture);
+        
+        FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::DontLoad_Store, MirrorTextureRef->TextureRHI);
+        RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMirrorTexture"));
+        {
+            // Update viewport.
+            RHICmdList.SetViewport(
+                                   0, 0, 0.f,
+                                   MirrorTextureRef->GetSizeX(), MirrorTextureRef->GetSizeY(), 1.f);
             
-		const FTexture2DRHIRef& RenderTargetTexture = MirrorTextureRef->GetRenderTargetTexture();
-
-		RHICmdList.TransitionResource(EResourceTransitionAccess::EWritable, RenderTargetTexture);
-
-		FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::DontLoad_Store, MirrorTextureRef->TextureRHI);
-		RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMirrorTexture"));
-		{
-			// Update viewport.
-			RHICmdList.SetViewport(
-				0, 0, 0.f,
-				MirrorTextureRef->GetSizeX(), MirrorTextureRef->GetSizeY(), 1.f);
-
-				
-			ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
-
-			UWorld * world = GEngine->GetWorld();
-
-			if (world && world->Scene) {
-				FeatureLevel = world->Scene->GetFeatureLevel();
-			}
-
-			// Get shaders.
+            
+            ERHIFeatureLevel::Type FeatureLevel = GMaxRHIFeatureLevel;
+            
+            UWorld * world = GEngine->GetWorld();
+            
+            if (world && world->Scene) {
+                FeatureLevel = world->Scene->GetFeatureLevel();
+            }
+            
+            // Get shaders.
             FGlobalShaderMap* GlobalShaderMap = GetGlobalShaderMap(FeatureLevel);
-			TShaderMapRef<FWebCameraMirrorVS> VertexShader(GlobalShaderMap);
-			TShaderMapRef<FWebCameraMirrorPS> PixelShader(GlobalShaderMap);
-
-			// Set the graphic pipeline state.
-			FGraphicsPipelineStateInitializer GraphicsPSOInit;
-			RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
-			GraphicsPSOInit.DepthStencilState = DepthStencilState;
-			GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
-			GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
-			GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
-			GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
-			GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
-			GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
-			SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
-
-		
-
-			// Update shader uniform parameters.
-			PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), TextureResource, true);
-
-
-			// Draw a fullscreen quad that we can run our pixel shader on
+            TShaderMapRef<FWebCameraMirrorVS> VertexShader(GlobalShaderMap);
+            TShaderMapRef<FWebCameraMirrorPS> PixelShader(GlobalShaderMap);
+            
+            // Set the graphic pipeline state.
+            FGraphicsPipelineStateInitializer GraphicsPSOInit;
+            RHICmdList.ApplyCachedRenderTargets(GraphicsPSOInit);
+            GraphicsPSOInit.DepthStencilState = DepthStencilState;
+            GraphicsPSOInit.BlendState = TStaticBlendState<>::GetRHI();
+            GraphicsPSOInit.RasterizerState = TStaticRasterizerState<>::GetRHI();
+            GraphicsPSOInit.PrimitiveType = PT_TriangleStrip;
+            GraphicsPSOInit.BoundShaderState.VertexDeclarationRHI = GTextureVertexDeclaration.VertexDeclarationRHI;
+            GraphicsPSOInit.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+            GraphicsPSOInit.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
+            SetGraphicsPipelineState(RHICmdList, GraphicsPSOInit);
+            
+            // Update shader uniform parameters.
+            PixelShader->SetParameters(RHICmdList, PixelShader.GetPixelShader(), TextureResource, true);
+            
+            
+            // Draw a fullscreen quad that we can run our pixel shader on
 #if (ENGINE_MINOR_VERSION >= 21)
-			FVertexBufferRHIRef VertexBufferRHI = CreateQuadVertexBuffer();
-			
-			RHICmdList.SetStreamSource(0, VertexBufferRHI, 0);
+            FVertexBufferRHIRef VertexBufferRHI = CreateQuadVertexBuffer();
+            
+            RHICmdList.SetStreamSource(0, VertexBufferRHI, 0);
 #if (ENGINE_MINOR_VERSION >= 23)
-			RHICmdList.DrawPrimitive(0, 2, 1);
+            RHICmdList.DrawPrimitive(0, 2, 1);
 #else
-			RHICmdList.DrawPrimitive(PT_TriangleStrip, 0, 2, 1);
+            RHICmdList.DrawPrimitive(PT_TriangleStrip, 0, 2, 1);
 #endif
-			VertexBufferRHI.SafeRelease();
-
+            VertexBufferRHI.SafeRelease();
+            
 #else
-			FTextureVertex Vertices[4];
-			Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
-			Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
-			Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
-			Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
-			Vertices[0].UV = FVector2D(0, 0);
-			Vertices[1].UV = FVector2D(1, 0);
-			Vertices[2].UV = FVector2D(0, 1);
-			Vertices[3].UV = FVector2D(1, 1);
-
-			// Deprecated in 4.21
-			DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
-
+            FTextureVertex Vertices[4];
+            Vertices[0].Position = FVector4(-1.0f, 1.0f, 0, 1.0f);
+            Vertices[1].Position = FVector4(1.0f, 1.0f, 0, 1.0f);
+            Vertices[2].Position = FVector4(-1.0f, -1.0f, 0, 1.0f);
+            Vertices[3].Position = FVector4(1.0f, -1.0f, 0, 1.0f);
+            Vertices[0].UV = FVector2D(0, 0);
+            Vertices[1].UV = FVector2D(1, 0);
+            Vertices[2].UV = FVector2D(0, 1);
+            Vertices[3].UV = FVector2D(1, 1);
+            
+            // Deprecated in 4.21
+            DrawPrimitiveUP(RHICmdList, PT_TriangleStrip, 2, Vertices, sizeof(Vertices[0]));
+            
 #endif
-
-
-		}
-		RHICmdList.EndRenderPass();
-
-        
-       
-
-	}
+            
+            
+        }
+        RHICmdList.EndRenderPass();
+    }
     
     frwLock.ReadUnlock();
 }
@@ -244,7 +236,7 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
 void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth, int TextureHeight, int numColors) {
     try {
         if (cameraTexture.IsValid()) {
-        
+            
             FUpdateTextureRegion2D region(0, 0, 0, 0, TextureWidth, TextureHeight);
             
             if ( cameraTexture->Resource) {
@@ -271,31 +263,32 @@ void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth
                 RegionData->frwLock = &frwLock;
                 
                 ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-                UpdateTextureRegionsData,
-                FUpdateTextureRegionsData*, RegionData, RegionData,
-                {
-                    FTexture2DResource* Texture2DResource = (FTexture2DResource*)RegionData->cameraTexture->Resource;
-                   int32 CurrentFirstMip = Texture2DResource->GetCurrentFirstMip();
-                   if (RegionData->MipIndex >= CurrentFirstMip)
-                   {
-                       RegionData->frwLock->WriteLock();
-                       
-                       RHIUpdateTexture2D(Texture2DResource->GetTexture2DRHI(),
-                                          RegionData->MipIndex - CurrentFirstMip,
-                                          RegionData->Region,
-                                          RegionData->SrcPitch,
-                                          RegionData->SrcData + RegionData->Region.SrcY * RegionData->SrcPitch + RegionData->Region.SrcX * RegionData->SrcBpp);
-                       RegionData->frwLock->WriteUnlock();
-                   }
-                
-        
-                     delete RegionData;
+                                                           UpdateTextureRegionsData,
+                                                           FUpdateTextureRegionsData*, RegionData, RegionData,
+                                                           {
+                    if(RegionData->cameraTexture.IsValid()) {
+                        FTexture2DResource* Texture2DResource = (FTexture2DResource*)RegionData->cameraTexture->Resource;
+                        int32 CurrentFirstMip = Texture2DResource->GetCurrentFirstMip();
+                        if (RegionData->MipIndex >= CurrentFirstMip)
+                        {
+                            RegionData->frwLock->WriteLock();
+                            
+                            RHIUpdateTexture2D(Texture2DResource->GetTexture2DRHI(),
+                                               RegionData->MipIndex - CurrentFirstMip,
+                                               RegionData->Region,
+                                               RegionData->SrcPitch,
+                                               RegionData->SrcData + RegionData->Region.SrcY * RegionData->SrcPitch + RegionData->Region.SrcX * RegionData->SrcBpp);
+                            RegionData->frwLock->WriteUnlock();
+                        }
+                    }
+                    
+                    delete RegionData;
                 });
                 
             }
             
             if ( mirrored && mirroredTexture.IsValid()) {
-
+                
                 struct FUpdateTextureRegionsData
                 {
                     FTextureRenderTargetResource* MirrorTextureResource;
@@ -308,20 +301,18 @@ void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth
                 RegionData->frwLock = &frwLock;
                 
                 ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-                UpdateTextureRegionsData,
-                FUpdateTextureRegionsData*, RegionData, RegionData,
-                {
+                                                           UpdateTextureRegionsData,
+                                                           FUpdateTextureRegionsData*, RegionData, RegionData,
+                                                           {
                     mirrorTexture_RenderThread(*RegionData->frwLock, RHICmdList, RegionData->TextureResource, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
                     delete RegionData;
                 });
-
+                
             }
         }
     } catch(...) {
         
     }
-
-
 }
 
 UTexture* BaseVideoGrabber::getTexture() {
@@ -329,10 +320,10 @@ UTexture* BaseVideoGrabber::getTexture() {
         return mirroredTexture.Get();
     }
     
-	if (cameraTexture.IsValid()) {
-		return cameraTexture.Get();
-	}
-	return NULL;
+    if (cameraTexture.IsValid()) {
+        return cameraTexture.Get();
+    }
+    return NULL;
 }
 
 bool BaseVideoGrabber::isVideoMirrored() {
@@ -347,14 +338,14 @@ void BaseVideoGrabber::setVideoMirrored( bool mirrored ) {
 bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
     bool retVal = false;
     frwLock.ReadLock();
-	UTexture* texture = getTexture();
-	if ( texture ) {
-		retVal = ImageUtility::SaveTextureAsFile(mirrored?
-			static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI(): 
-			static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI(), fileName);
-	}
+    UTexture* texture = getTexture();
+    if ( texture ) {
+        retVal = ImageUtility::SaveTextureAsFile(mirrored?
+                                                 static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI():
+                                                 static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI(), fileName);
+    }
     frwLock.ReadUnlock();
-	return retVal;
+    return retVal;
 }
 
 
@@ -384,7 +375,7 @@ void BaseVideoGrabber::ApplicationWillDeactivateDelegate_Handler() {
         frwLock.WriteLock();
         pause();
         frwLock.WriteUnlock();
-
+        
 #if PLATFORM_IOS
     }
 #endif
@@ -398,7 +389,7 @@ void BaseVideoGrabber::ApplicationHasReactivatedDelegate_Handler() {
         frwLock.WriteLock();
         resume();
         frwLock.WriteUnlock();
-
+        
 #if PLATFORM_IOS
     }
 #endif
