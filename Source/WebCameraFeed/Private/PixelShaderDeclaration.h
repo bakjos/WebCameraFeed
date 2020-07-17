@@ -28,6 +28,7 @@
 #include "UniformBuffer.h"
 #include "TextureResource.h"
 #include "RHICommandList.h"
+#include "RHIStaticStates.h"
 #include "ShaderParameterUtils.h"
 #include <Runtime/Launch/Resources/Version.h>
 
