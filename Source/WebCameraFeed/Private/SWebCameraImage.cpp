@@ -3,7 +3,7 @@
 
 
 SWebCameraImage::SWebCameraImage() {
-	bCanTick = true;
+	SetCanTick(true);
 }
 
 
