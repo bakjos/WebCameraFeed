@@ -330,7 +330,7 @@
 
 #pragma mark -
 #pragma mark AVCaptureSession delegate
-- (void)captureOutput:(AVCaptureOutput *)captureOutput
+- (void)captureOutput:(AVCaptureOutput *)output
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection
 {
@@ -347,7 +347,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
                 size_t heightIn    = CVPixelBufferGetHeight(imageBuffer);
                 grabberPtr->updatePixelsCB(isrc4, widthIn, heightIn);
             }
-            if (captureOutput){
+            if (output){
             // Unlock the image buffer
                 CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
             }

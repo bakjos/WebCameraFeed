@@ -337,9 +337,16 @@ bool BaseVideoGrabber::saveTextureAsFile ( const FString& fileName ) {
     frwLock.ReadLock();
     UTexture* texture = getTexture();
     if ( texture ) {
-        retVal = ImageUtility::SaveTextureAsFile(mirrored?
-                                                 static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI():
-                                                 static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI(), fileName);
+        
+        FTexture2DRHIRef texture_ref;
+        
+        if (mirrored) {
+            texture_ref =  static_cast<FTextureRenderTarget2DResource*>(texture->Resource)->GetTextureRHI();
+        } else {
+            texture_ref =  static_cast<FTexture2DResource*>(cameraTexture->Resource)->GetTexture2DRHI();
+        }
+        
+        retVal = ImageUtility::SaveTextureAsFile(texture_ref, fileName);
     }
     frwLock.ReadUnlock();
     return retVal;
