@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "DirectShowVideoGrabber.h"
-#include <Async.h>
+#include <Async/Async.h>
 
 #if PLATFORM_WINDOWS
 DirectShowVideoGrabber::DirectShowVideoGrabber()
@@ -40,7 +40,7 @@ TArray<FVideoDevice> DirectShowVideoGrabber::listDevices() const{
 	return devices;
 }
 
-bool DirectShowVideoGrabber::setup(int w, int h, bool mirrored) {
+bool DirectShowVideoGrabber::setup(int w, int h, bool _mirrored) {
 	if (bChooseDevice) {
 		device = deviceID;
 		std::vector <std::string> devList = VI.getDeviceList();
@@ -80,7 +80,7 @@ bool DirectShowVideoGrabber::setup(int w, int h, bool mirrored) {
 			height = ourRequestedHeight;
 		}
 		registerDelegates();
-        setVideoMirrored(mirrored);
+        setVideoMirrored(_mirrored);
 		allocateData(width, height);
 		startThread();
 		return true;

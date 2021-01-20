@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SImage.h"
+#include "Widgets/Images/SImage.h"
 #include "VideoGrabber.h"
 
 class WEBCAMERAFEED_API SWebCameraImage: public SImage {

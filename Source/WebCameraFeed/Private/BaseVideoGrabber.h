@@ -5,12 +5,13 @@
 #include "CoreMinimal.h"
 #include "WebCameraDevice.h"
 
-#include "Runnable.h"
-#include "RunnableThread.h"
+#include "HAL/Runnable.h"
+#include "HAL/RunnableThread.h"
 #include <Engine/Texture2D.h>
 #include <Engine/TextureRenderTarget2D.h>
 #include "PixelShaderDeclaration.h"
 #include <Misc/CoreDelegates.h>
+#include "Logging/LogMacros.h"
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogVideoGrabber,Log, All)

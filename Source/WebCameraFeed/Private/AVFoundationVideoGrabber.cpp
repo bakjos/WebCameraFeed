@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AVFoundationVideoGrabber.h"
-#include <Async.h>
+#include <Async/Async.h>
 
 #if PLATFORM_MAC || PLATFORM_IOS
 
@@ -432,10 +432,10 @@ void AVFoundationVideoGrabber::close() {
     bLock = false;
 }
 
-bool AVFoundationVideoGrabber::setupWithGrant(int w, int h, bool mirrored) {
-    if( [grabber initCapture:fps capWidth:w capHeight:h capMirror: mirrored] ) {
+bool AVFoundationVideoGrabber::setupWithGrant(int w, int h, bool m) {
+    if( [grabber initCapture:fps capWidth:w capHeight:h capMirror: m] ) {
         //update the pixel dimensions based on what the camera supports
-        setVideoMirrored (mirrored);
+        setVideoMirrored (m);
         width = grabber->width;
         height = grabber->height;
         allocateData(width, height, PF_B8G8R8A8);

@@ -3,7 +3,7 @@
 
 
 SWebCameraImage::SWebCameraImage() {
-	bCanTick = true;
+	SetCanTick(true);
 }
 
 
@@ -18,6 +18,6 @@ void SWebCameraImage::Tick( const FGeometry& AllottedGeometry, const double InCu
 	}
 }
 
-void SWebCameraImage::SetVideoGrabber(TSharedPtr<VideoGrabber> videoGrabber) {
-	this->videoGrabber = videoGrabber;
+void SWebCameraImage::SetVideoGrabber(TSharedPtr<VideoGrabber> _videoGrabber) {
+	this->videoGrabber = _videoGrabber;
 }

@@ -7,9 +7,9 @@
 
 #if PLATFORM_WINDOWS
 
-#include "AllowWindowsPlatformTypes.h"
+#include "Windows/AllowWindowsPlatformTypes.h"
 #include "videoInput.h"
-#include "HideWindowsPlatformTypes.h"
+#include "Windows/HideWindowsPlatformTypes.h"
 
 class DirectShowVideoGrabber: public BaseVideoGrabber
 {

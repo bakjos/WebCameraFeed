@@ -5,8 +5,8 @@
 #include <IImageWrapperModule.h>
 #include <Modules/ModuleManager.h>
 #include <IImageWrapper.h>
-#include <ObjectThumbnail.h>
-#include "Misc/FileHelper.h"
+#include <Misc/ObjectThumbnail.h>
+#include <Misc/FileHelper.h>
 
 ImageUtility::ImageUtility()
 {
@@ -62,11 +62,8 @@ bool ImageUtility::SaveTextureAsFile (FTexture2DRHIRef texture, const FString& f
     data->fSemaphore = FGenericPlatformProcess::GetSynchEventFromPool(false);
     
     
-    
-    ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-       ObtainScreenShot,FGetTextureData*, data, data,
-       {
-           
+    ENQUEUE_RENDER_COMMAND(ObtainScreenShot)
+        ([data](FRHICommandListImmediate& RHICmdList) {         
            FIntRect rect  = FIntRect(0, 0, data->texture->GetSizeX(), data->texture->GetSizeY());
            data->Bitmap.Reset();
            RHICmdList.ReadSurfaceData(

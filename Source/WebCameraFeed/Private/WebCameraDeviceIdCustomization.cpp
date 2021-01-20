@@ -4,7 +4,7 @@
 #include "Framework/Application/SlateApplication.h"
 
 #include "PropertyHandle.h"
-#include "STextComboBox.h"
+#include "Widgets/Input/STextComboBox.h"
 #include "DetailWidgetRow.h"
 
 FWebCameraDeviceIdCustomization::FWebCameraDeviceIdCustomization() {

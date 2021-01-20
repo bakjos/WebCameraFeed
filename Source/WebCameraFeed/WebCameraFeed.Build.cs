@@ -50,7 +50,7 @@ public class WebCameraFeed : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
         bEnableExceptions = true;
-		//OptimizeCode = CodeOptimization.Never;
+		OptimizeCode = CodeOptimization.Never;
 		
 		PublicIncludePaths.AddRange(
 			new string[] {

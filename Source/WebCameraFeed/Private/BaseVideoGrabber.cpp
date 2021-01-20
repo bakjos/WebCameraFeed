@@ -3,12 +3,13 @@
 #include "BaseVideoGrabber.h"
 #include "ImageUtility.h"
 #include <UnrealEngine.h>
-#include <Classes/Engine/World.h>
+#include <Engine/World.h>
 #include <SceneInterface.h>
-#include <Public/GlobalShader.h>
-#include <Public/PipelineStateCache.h>
-#include <Public/RHIStaticStates.h>
-#include <Public/RHIUtilities.h>
+#include <GlobalShader.h>
+#include <PipelineStateCache.h>
+#include <RHIStaticStates.h>
+#include <RHIUtilities.h>
+#include <Rendering/Texture2DResource.h>
 #include <Engine/TextureRenderTarget2D.h>
 
 
@@ -262,10 +263,8 @@ void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth
                 RegionData->SrcData = pData;
                 RegionData->frwLock = &frwLock;
                 
-                ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-                                                           UpdateTextureRegionsData,
-                                                           FUpdateTextureRegionsData*, RegionData, RegionData,
-                                                           {
+                ENQUEUE_RENDER_COMMAND(UpdateTextureRegionsData)
+                 ([RegionData](FRHICommandListImmediate& RHICmdList) {
                     if(RegionData->cameraTexture.IsValid()) {
                         FTexture2DResource* Texture2DResource = (FTexture2DResource*)RegionData->cameraTexture->Resource;
                         int32 CurrentFirstMip = Texture2DResource->GetCurrentFirstMip();
@@ -299,11 +298,9 @@ void BaseVideoGrabber::copyDataToTexture(unsigned char * pData, int TextureWidth
                 RegionData->MirrorTextureResource = static_cast<FTextureRenderTarget2DResource*>( mirroredTexture->Resource );
                 RegionData->TextureResource = static_cast<FTexture2DResource*>(cameraTexture->Resource);
                 RegionData->frwLock = &frwLock;
-                
-                ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
-                                                           UpdateTextureRegionsData,
-                                                           FUpdateTextureRegionsData*, RegionData, RegionData,
-                                                           {
+
+                ENQUEUE_RENDER_COMMAND(UpdateTextureRegionsData)
+                    ([RegionData](FRHICommandListImmediate& RHICmdList) {
                     mirrorTexture_RenderThread(*RegionData->frwLock, RHICmdList, RegionData->TextureResource, RegionData->MirrorTextureResource, TStaticDepthStencilState<false, CF_Always>::GetRHI());
                     delete RegionData;
                 });
@@ -330,8 +327,8 @@ bool BaseVideoGrabber::isVideoMirrored() {
     return mirrored;
 }
 
-void BaseVideoGrabber::setVideoMirrored( bool mirrored ) {
-    this->mirrored = mirrored;
+void BaseVideoGrabber::setVideoMirrored( bool m ) {
+    this->mirrored = m;
 }
 
 
