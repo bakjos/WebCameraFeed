@@ -158,7 +158,7 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
         
         const FTexture2DRHIRef& RenderTargetTexture = MirrorTextureRef->GetRenderTargetTexture();
         
-        RHICmdList.TransitionResource(EResourceTransitionAccess::EWritable, RenderTargetTexture);
+        RHICmdList.Transition(FRHITransitionInfo(RenderTargetTexture, ERHIAccess::SRVMask, ERHIAccess::RTV));
         
         FRHIRenderPassInfo RPInfo(RenderTargetTexture, ERenderTargetActions::DontLoad_Store, MirrorTextureRef->TextureRHI);
         RHICmdList.BeginRenderPass(RPInfo, TEXT("DrawMirrorTexture"));
@@ -229,6 +229,7 @@ void  BaseVideoGrabber::mirrorTexture_RenderThread(FRWLock& frwLock, FRHICommand
             
         }
         RHICmdList.EndRenderPass();
+        RHICmdList.Transition(FRHITransitionInfo(RenderTargetTexture, ERHIAccess::RTV, ERHIAccess::SRVMask));
     }
     
     frwLock.ReadUnlock();

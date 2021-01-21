@@ -129,7 +129,7 @@ public:
 		}
 
 
-		SetShaderValue(RHICmdList, ShaderRHI, mirrorParameter, mirror);
+		SetShaderValue(RHICmdList, ShaderRHI, mirrorParameter, (int)mirror);
 		SetTextureParameter(RHICmdList, ShaderRHI, TextureParameter, TextureParameterSampler, samplerState, UITextureRHI->TextureRHI);
 	}
 
