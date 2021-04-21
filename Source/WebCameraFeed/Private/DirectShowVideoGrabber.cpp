@@ -104,7 +104,7 @@ void DirectShowVideoGrabber::update() {
 				int w = width;
 				int h = height;
 				AsyncTask(ENamedThreads::GameThread, [this, w, h, fSemaphore]() {
-					this->resizeData(w, h, PF_B8G8R8A8);
+					this->resizeData(w, h);
 					fSemaphore->Trigger();
 				});
 				fSemaphore->Wait();
