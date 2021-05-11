@@ -1,7 +1,7 @@
 #include "AndroidVideoGrabber.h"
 #include <Async/Async.h>
 #if PLATFORM_ANDROID
-#include <Public/Android/AndroidApplication.h>
+#include "Android/AndroidApplication.h"
 #include <Runtime/Launch/Public/Android/AndroidJNI.h>
 #include <android/log.h>
 
@@ -459,9 +459,9 @@ int  AndroidVideoGrabber::getCameraFacing(int facing) const {
 }
 
 
-int AndroidVideoGrabber::getFacingOfCamera(int device) const {
+int AndroidVideoGrabber::getFacingOfCamera(int _device) const {
 	if (!AndroidThunkJava_getFacingOfCamera || !ENV) return 0;
-	return FJavaWrapper::CallIntMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_getFacingOfCamera, device);
+	return FJavaWrapper::CallIntMethod(ENV, FJavaWrapper::GameActivityThis, AndroidThunkJava_getFacingOfCamera, _device);
 }
 
 bool  AndroidThunkCpp_startCamera(int w, int h, int fps, int texID)
