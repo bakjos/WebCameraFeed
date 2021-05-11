@@ -305,22 +305,21 @@ import android.graphics.PointF;
 	public int AndroidThunkJava_getHeight() {
 		return height;
 	}
-
-	@Override
-	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-		for (int i = 0; i &lt; permissions.length; i++) {
-			String p = permissions[i];
-			if (p.equals(Manifest.permission.CAMERA)) {
-				AndroidThunkJava_stopCamera();
-				AndroidThunkJava_startCamera(width, height, targetFps, textureID);
-				break;
-			}
-		}
-	}
-
 		</insert>
 	</gameActivityClassAdditions>
+    
+    <gameActivityOnRequestPermissionsResultAdditions>
+        <insert>
+        for (int i = 0; i &lt; permissions.length; i++) {
+            String p = permissions[i];
+            if (p.equals(Manifest.permission.CAMERA)) {
+                AndroidThunkJava_stopCamera();
+                AndroidThunkJava_startCamera(width, height, targetFps, textureID);
+                break;
+            }
+        }
+        </insert>
+    </gameActivityOnRequestPermissionsResultAdditions>
 
 	<!-- optional additions to GameActivity onCreate in GameActivity.java -->
 	<gameActivityOnCreateAdditions>
