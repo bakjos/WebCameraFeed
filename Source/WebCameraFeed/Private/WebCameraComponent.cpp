@@ -25,7 +25,7 @@ void UWebCameraComponent::BeginPlay()
 
 	TArray<FString> devices = ListDevices();
 
-	if (devices.Num() >= DeviceId.selectedDevice) {
+	if (DeviceId.selectedDevice >= devices.Num()) {
 		DeviceId.selectedDevice = devices.Num() - 1;
 	}
 
